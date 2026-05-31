@@ -7,7 +7,7 @@ class PaqueteRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetes, nombre, descripcion, precio
+                    SELECT idPaquetes, nombre_paquete, descripcion, precio,estado
                     FROM paquetes
                     ORDER BY idPaquetes
                     """
@@ -19,7 +19,7 @@ class PaqueteRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetes, nombre, descripcion, precio
+                    SELECT idPaquetes, nombre_paquete, descripcion, precio,estado
                     FROM paquetes
                     WHERE idPaquetes = %s
                     """,
@@ -32,7 +32,7 @@ class PaqueteRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO paquetes (nombre, descripcion, precio)
+                    INSERT INTO paquetes (nombre_paquete, descripcion, precio)
                     VALUES (%s, %s, %s)
                     """,
                     (data["nombre"], data["descripcion"], data["precio"]),
@@ -44,7 +44,7 @@ class PaqueteRepository:
                 cur.execute(
                     """
                     UPDATE paquetes
-                    SET nombre = %s, descripcion = %s, precio = %s
+                    SET nombre_paquete = %s, descripcion = %s, precio = %s
                     WHERE idPaquetes = %s
                     """,
                     (data["nombre"], data["descripcion"], data["precio"], paquete_id),

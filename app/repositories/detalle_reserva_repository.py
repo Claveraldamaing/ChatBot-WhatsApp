@@ -7,11 +7,11 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idDetalle_Reserva, idReservas, idPaquetes,
-                           cantidad, precio_unitario,
-                           (cantidad * precio_unitario) AS subtotal
+                    SELECT idDetalleReserva, idReservas, idPaquetesEventos,
+                           cantidad, subtotal,
+                           (cantidad * subtotal) AS subtotal
                     FROM detalle_reserva
-                    ORDER BY idDetalle_Reserva
+                    ORDER BY idDetalleReserva
                     """
                 )
                 return cur.fetchall()
@@ -21,11 +21,11 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idDetalle_Reserva, idReservas, idPaquetes,
-                           cantidad, precio_unitario,
-                           (cantidad * precio_unitario) AS subtotal
+                    SELECT idDetalleReserva, idReservas, idPaquetesEventos,
+                           cantidad, subtotal,
+                           (cantidad * subtotal) AS subtotal
                     FROM detalle_reserva
-                    WHERE idDetalle_Reserva = %s
+                    WHERE idDetalleReserva = %s
                     """,
                     (detalle_id,),
                 )
