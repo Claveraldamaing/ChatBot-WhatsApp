@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from app.api.routes.ia import router as ia_router
 
 from app.api.routes.clientes import router as clientes_router 
 from app.api.routes.paquetes import router as paquetes_router
@@ -8,6 +9,8 @@ from app.api.routes.detalle_reserva import router as detalle_reserva_router
 api_router = APIRouter()
 api_router.include_router(clientes_router)
 
+#erick
+api_router.include_router(ia_router)
 
 
 
