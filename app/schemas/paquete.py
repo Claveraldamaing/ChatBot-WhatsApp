@@ -5,6 +5,7 @@ class PaqueteBase(BaseModel):
     nombre: str
     descripcion: str | None = None
     precio: float
+    estado: str="activo"
 
 
 class PaqueteCreate(PaqueteBase):

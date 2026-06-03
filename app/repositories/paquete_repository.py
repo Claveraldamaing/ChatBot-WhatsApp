@@ -32,10 +32,10 @@ class PaqueteRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO paquetes (nombre_paquete, descripcion, precio)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO paquetes (nombre_paquete, descripcion, precio,estado)
+                    VALUES (%s, %s, %s, %s)
                     """,
-                    (data["nombre"], data["descripcion"], data["precio"]),
+                    (data["nombre"], data["descripcion"], data["precio"],data["estado"]),
                 )
  
     def update(self, paquete_id: int, data: dict) -> bool:
@@ -44,10 +44,10 @@ class PaqueteRepository:
                 cur.execute(
                     """
                     UPDATE paquetes
-                    SET nombre_paquete = %s, descripcion = %s, precio = %s
+                    SET nombre_paquete = %s, descripcion = %s, precio = %s, estado = %s
                     WHERE idPaquetes = %s
                     """,
-                    (data["nombre"], data["descripcion"], data["precio"], paquete_id),
+                    (data["nombre"], data["descripcion"], data["precio"], data["estado"], paquete_id),
                 )
                 return cur.rowcount > 0
  

@@ -7,9 +7,8 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idDetalleReserva, idReservas, idPaquetesEventos,
-                           cantidad, subtotal,
-                           (cantidad * subtotal) AS subtotal
+                SELECT idDetalleReserva, idReservas, idPaquetesEventos,
+                    cantidad, precio_unitario, subtotal
                     FROM detalle_reserva
                     ORDER BY idDetalleReserva
                     """
@@ -22,8 +21,7 @@ class DetalleReservaRepository:
                 cur.execute(
                     """
                     SELECT idDetalleReserva, idReservas, idPaquetesEventos,
-                           cantidad, subtotal,
-                           (cantidad * subtotal) AS subtotal
+                        cantidad, precio_unitario, subtotal
                     FROM detalle_reserva
                     WHERE idDetalleReserva = %s
                     """,
@@ -36,12 +34,11 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idDetalle_Reserva, idReservas, idPaquetes,
-                           cantidad, precio_unitario,
-                           (cantidad * precio_unitario) AS subtotal
+                    SELECT idDetalleReserva, idReservas, idPaquetesEventos,
+                        cantidad, precio_unitario, subtotal
                     FROM detalle_reserva
                     WHERE idReservas = %s
-                    ORDER BY idDetalle_Reserva
+                    ORDER BY idDetalleReserva
                     """,
                     (reserva_id,),
                 )
@@ -52,12 +49,12 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO detalle_reserva (idReservas, idPaquetes, cantidad, precio_unitario)
+                    INSERT INTO detalle_reserva (idReservas, idPaquetesEventos, cantidad, precio_unitario)
                     VALUES (%s, %s, %s, %s)
                     """,
                     (
                         data["idReservas"],
-                        data["idPaquetes"],
+                        data["idPaquetesEventos"],
                         data["cantidad"],
                         data["precio_unitario"],
                     ),
@@ -69,13 +66,13 @@ class DetalleReservaRepository:
                 cur.execute(
                     """
                     UPDATE detalle_reserva
-                    SET idReservas = %s, idPaquetes = %s,
+                    SET idReservas = %s, idPaquetesEventos = %s,
                         cantidad = %s, precio_unitario = %s
-                    WHERE idDetalle_Reserva = %s
+                    WHERE idDetalleReserva = %s
                     """,
                     (
                         data["idReservas"],
-                        data["idPaquetes"],
+                        data["idPaquetesEventos"],
                         data["cantidad"],
                         data["precio_unitario"],
                         detalle_id,
@@ -87,7 +84,7 @@ class DetalleReservaRepository:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM detalle_reserva WHERE idDetalle_Reserva = %s",
+                    "DELETE FROM detalle_reserva WHERE idDetalleReserva = %s",
                     (detalle_id,),
                 )
                 return cur.rowcount > 0
