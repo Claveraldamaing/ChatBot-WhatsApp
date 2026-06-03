@@ -7,9 +7,9 @@ class PaqueteEventoRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetes_Eventos, idPaquetes, idEventos
+                    SELECT idPaquetesEventos, idPaquetes, idEventos
                     FROM paquetes_eventos
-                    ORDER BY idPaquetes_Eventos
+                    ORDER BY idPaquetesEventos
                     """
                 )
                 return cur.fetchall()
@@ -19,9 +19,9 @@ class PaqueteEventoRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetes_Eventos, idPaquetes, idEventos
+                    SELECT idPaquetesEventos, idPaquetes, idEventos
                     FROM paquetes_eventos
-                    WHERE idPaquetes_Eventos = %s
+                    WHERE idPaquetesEventos = %s
                     """,
                     (paquete_evento_id,),
                 )
@@ -32,7 +32,7 @@ class PaqueteEventoRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetes_Eventos, idPaquetes, idEventos
+                    SELECT idPaquetesEventos, idPaquetes, idEventos
                     FROM paquetes_eventos
                     WHERE idEventos = %s
                     """,
@@ -55,7 +55,7 @@ class PaqueteEventoRepository:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM paquetes_eventos WHERE idPaquetes_Eventos = %s",
+                    "DELETE FROM paquetes_eventos WHERE idPaquetesEventos = %s",
                     (paquete_evento_id,),
                 )
                 return cur.rowcount > 0

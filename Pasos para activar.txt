@@ -1,0 +1,28 @@
+FUNDAMENTOS: RECOMIENDO APOYARSE DE GEMINI.
+
+main.py (Servidor): 
+Podría decirse que es el backend o servidor creado para recibir  mensajes
+
+META (WhatsApp):
+Es el que recibe y envía los mensajes qque escriben al numero de telefono empresarial designado, También a la dirección Weebhook que se configura en su página ejemplo (htttps://...ngrok-free.dev/webhook)
+
+Ngrok (Punte del servidor):
+Es el túnel que permite que los mensajes que reciba META lleguen ordenador y filtrado con seguridad a través del puerto 8000.
+
+main.py (Recepcionista de correos):
+Se convierte en el recepcionista esperando en el puerto 8000, y cuando los mensajes llegan, el main.py muestra y abre los mensaje en el backend.
+-----------------------------------------------------------------
+PASOS:
+
+1.Instalar Ngrok que servidar para encender el puerto del servidor, puedes apoyarte del siguiente video (https://www.youtube.com/watch?v=yt5HlfX4T5M)
+
+2.Interactuar y  fegistrarse con cuenta fb en (META) en la página(https://developers.facebook.com/apps/) para generar tokens con META y configurar numeros de telefonos empresariales para trabajar, entrara a la configuración de la API, configurar y activar message en META para poder recibir los mensajes,etc.(si se dificulta comprenderlo recomiendo ayudarse de gemini indicandole todo el proceso a realizar).
+
+3.Abrir el archivo python y ejecutar con su ruta de la carpeta en la terminal el archivo main.py, para encender el servidor, con el comando (python main.py)
+
+comandos a usar para FastAPI, puede apoyarse también del video.
+https://www.youtube.com/watch?v=mb9-c_Rk8ac
+
+4.Ejecutar en otra terminal para encender el puerto del servidor con Ngrok con el comando (ngrok http 8000)
+
+Nota: Puede apoyarse de gemini ya que todo fue creado con instrucciones de gemini y videos de Youtube o en todo caso comunicarse con el creador de este commit para ayudar con el proceso de la vinculación entre el el servidor y el usuario de wsp.
