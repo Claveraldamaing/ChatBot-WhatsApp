@@ -2,14 +2,15 @@ from app.core.database import get_connection
 
 
 class PaqueteEventoRepository:
-    def get_all(self):
+    def get_activos_para_ia(self):
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT idPaquetesEventos, idPaquetes, idEventos
-                    FROM paquetes_eventos
-                    ORDER BY idPaquetesEventos
+                    SELECT nombre_paquete, descripcion, precio, estado
+                    FROM paquetes
+                    WHERE estado = 'activo'
+                    ORDER BY idPaquetes
                     """
                 )
                 return cur.fetchall()

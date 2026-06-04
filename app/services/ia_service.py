@@ -2,6 +2,7 @@ from openai import OpenAI
 
 from app.core.config import settings
 from app.repositories.mensajes_ia_repository import MensajesIARepository
+from app.repositories.paquete_repository import PaqueteRepository
 
 
 client = OpenAI(
@@ -13,6 +14,7 @@ class IAService:
 
     def __init__(self):
         self.mensajes_repository = MensajesIARepository()
+        self.paquete_repository = PaqueteRepository()
 
     def responder(self, texto: str, id_clientes: int) -> str:
 
@@ -28,6 +30,14 @@ class IAService:
                 for mensaje in historial
             ]
         )
+        paquetes = self.paquete_repository.get_activos_para_ia()
+
+        paquetes_texto = "\n".join(
+         [
+        f"- {paquete[0]}: {paquete[1]} | Precio: S/ {paquete[2]} | Estado: {paquete[3]}"
+        for paquete in paquetes
+         ]
+         )
 
         respuesta = client.responses.create(
             model="gpt-4o-mini",
@@ -37,18 +47,15 @@ Eres un chatbot inteligente especializado en la atención y gestión de eventos 
 OBJETIVO:
 Ayudar a los clientes a consultar información, solicitar cotizaciones y realizar reservas de eventos mediante WhatsApp.
 
-SERVICIOS:
-- Cumpleaños infantiles
-- Shows infantiles
-- Graduaciones
-- Eventos familiares
-- Eventos corporativos
-- Reuniones sociales
+PAQUETES DISPONIBLES EN BASE DE DATOS:
+{paquetes_texto}
 
 COMPORTAMIENTO:
 - Responde de forma amable, profesional y breve.
 - Mantén un tono cordial y orientado al cliente.
 - No inventes precios ni disponibilidad.
+- Si el usuario pregunta por paquetes o precios, usa únicamente la información de PAQUETES DISPONIBLES EN BASE DE DATOS.
+- Si no existe un paquete relacionado en la base de datos, indica que un asesor debe confirmar la información.
 - Si no tienes información suficiente, solicita más datos.
 - Siempre busca ayudar al cliente a continuar con el proceso de reserva.
 - Usa el historial de conversación para no repetir preguntas que el cliente ya respondió.
