@@ -10,10 +10,10 @@ service = IAService()
 
 @router.post("/ia", response_model=RespuestaIA)
 def consultar_ia(data: MensajeIA):
-    respuesta = service.responder(data.texto, data.session_id)
+    respuesta = service.responder(data.texto, data.idClientes)
 
     return RespuestaIA(
-        session_id=data.session_id,
+        idClientes=data.idClientes,
         mensaje_recibido=data.texto,
         respuesta_ia=respuesta
     )

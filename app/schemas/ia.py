@@ -2,11 +2,11 @@ from pydantic import BaseModel
 
 
 class MensajeIA(BaseModel):
-    session_id: str
+    idClientes: int
     texto: str
 
 
 class RespuestaIA(BaseModel):
-    session_id: str
+    idClientes: int
     mensaje_recibido: str
     respuesta_ia: str
