@@ -3,7 +3,7 @@ from pydantic import BaseModel
  
 class DetalleReservaBase(BaseModel):
     idReservas: int
-    idPaquetes: int
+    idPaquetesEventos: int
     cantidad: int
     precio_unitario: float
  

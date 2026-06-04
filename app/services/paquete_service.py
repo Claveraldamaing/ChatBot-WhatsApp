@@ -31,5 +31,6 @@ class PaqueteService:
             "nombre": paquete[1],
             "descripcion": paquete[2],
             "precio": paquete[3],
+            "estado": paquete[4],
         }
  

@@ -33,7 +33,7 @@ class DetalleReservaService:
         return {
             "id": detalle[0],
             "idReservas": detalle[1],
-            "idPaquetes": detalle[2],
+            "idPaquetesEventos": detalle[2],
             "cantidad": detalle[3],
             "precio_unitario": detalle[4],
             "subtotal": detalle[5],
