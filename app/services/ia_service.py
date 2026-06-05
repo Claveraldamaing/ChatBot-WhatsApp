@@ -1,9 +1,9 @@
 from openai import OpenAI
 
 from app.core.config import settings
+from app.repositories.mensajes_ia_repository import MensajesIARepository
+from app.repositories.paquete_repository import PaqueteRepository
 
-
-historial_conversaciones = {}
 
 client = OpenAI(
     api_key=settings.openai_api_key
@@ -12,20 +12,32 @@ client = OpenAI(
 
 class IAService:
 
-    def responder(self, texto: str, session_id: str) -> str:
+    def __init__(self):
+        self.mensajes_repository = MensajesIARepository()
+        self.paquete_repository = PaqueteRepository()
 
-        # Obtener historial anterior de la conversación
-        historial = historial_conversaciones.get(session_id, [])
+    def responder(self, texto: str, id_clientes: int) -> str:
 
-        # Tomamos solo los últimos mensajes para no hacer muy largo el prompt
-        historial_reciente = historial[-8:]
+        # Obtener historial anterior desde PostgreSQL
+        historial = self.mensajes_repository.get_by_cliente(id_clientes, limit=8)
+
+        # Como viene ordenado DESC, lo invertimos para leerlo en orden cronológico
+        historial = list(reversed(historial))
 
         historial_texto = "\n".join(
             [
-                f"{mensaje['rol']}: {mensaje['contenido']}"
-                for mensaje in historial_reciente
+                f"{mensaje[0]}: {mensaje[1]}"
+                for mensaje in historial
             ]
         )
+        paquetes = self.paquete_repository.get_activos_para_ia()
+
+        paquetes_texto = "\n".join(
+         [
+        f"- {paquete[0]}: {paquete[1]} | Precio: S/ {paquete[2]} | Estado: {paquete[3]}"
+        for paquete in paquetes
+         ]
+         )
 
         respuesta = client.responses.create(
             model="gpt-4o-mini",
@@ -35,18 +47,15 @@ Eres un chatbot inteligente especializado en la atención y gestión de eventos 
 OBJETIVO:
 Ayudar a los clientes a consultar información, solicitar cotizaciones y realizar reservas de eventos mediante WhatsApp.
 
-SERVICIOS:
-- Cumpleaños infantiles
-- Shows infantiles
-- Graduaciones
-- Eventos familiares
-- Eventos corporativos
-- Reuniones sociales
+PAQUETES DISPONIBLES EN BASE DE DATOS:
+{paquetes_texto}
 
 COMPORTAMIENTO:
 - Responde de forma amable, profesional y breve.
 - Mantén un tono cordial y orientado al cliente.
 - No inventes precios ni disponibilidad.
+- Si el usuario pregunta por paquetes o precios, usa únicamente la información de PAQUETES DISPONIBLES EN BASE DE DATOS.
+- Si no existe un paquete relacionado en la base de datos, indica que un asesor debe confirmar la información.
 - Si no tienes información suficiente, solicita más datos.
 - Siempre busca ayudar al cliente a continuar con el proceso de reserva.
 - Usa el historial de conversación para no repetir preguntas que el cliente ya respondió.
@@ -106,7 +115,7 @@ Siempre que compartas un formulario, muestra el enlace completo para que el clie
 
 6. USO DEL HISTORIAL
 
-El historial muestra los mensajes anteriores de esta misma conversación.
+El historial muestra los mensajes anteriores de este cliente.
 Debes usarlo para entender el contexto.
 Por ejemplo:
 - Si el cliente primero dijo que quería reservar.
@@ -116,38 +125,6 @@ Debes entender que sigue hablando de la misma reserva.
 HISTORIAL DE LA CONVERSACIÓN:
 {historial_texto}
 
-EJEMPLOS:
-
-Cliente:
-"Quiero reservar un cumpleaños infantil"
-
-Respuesta:
-"¡Perfecto! 😊 Para ayudarte con la reserva necesito conocer la fecha del evento, la cantidad de invitados y la ubicación.
-
-También puedes completar directamente nuestro formulario de reserva:
-
-{settings.form_reserva_url}"
-
-Cliente:
-"Quiero información de sus servicios"
-
-Respuesta:
-"Con gusto 😊 Organizamos cumpleaños infantiles, shows infantiles, graduaciones y otros eventos sociales.
-
-Para brindarte una mejor atención puedes registrarte aquí:
-
-{settings.form_cliente_url}"
-
-Cliente:
-"¿Cuánto cuesta un show infantil?"
-
-Respuesta:
-"El costo puede variar según la fecha, ubicación, duración y cantidad de invitados.
-
-Para brindarte una cotización adecuada, por favor completa nuestro formulario de reserva:
-
-{settings.form_reserva_url}"
-
 NUEVO MENSAJE DEL CLIENTE:
 {texto}
 """
@@ -155,19 +132,24 @@ NUEVO MENSAJE DEL CLIENTE:
 
         respuesta_texto = respuesta.output_text
 
-        # Guardar mensaje del cliente en el historial
-        historial.append({
+        # Guardar mensaje del cliente en PostgreSQL
+        self.mensajes_repository.create({
+            "idClientes": id_clientes,
             "rol": "cliente",
-            "contenido": texto
+            "contenido": texto,
+            "tipo": "entrada",
+            "estado": "activo",
+            "tiene_reserva": False
         })
 
-        # Guardar respuesta de la IA en el historial
-        historial.append({
+        # Guardar respuesta de la IA en PostgreSQL
+        self.mensajes_repository.create({
+            "idClientes": id_clientes,
             "rol": "asistente",
-            "contenido": respuesta_texto
+            "contenido": respuesta_texto,
+            "tipo": "respuesta",
+            "estado": "activo",
+            "tiene_reserva": False
         })
-
-        # Guardar historial actualizado
-        historial_conversaciones[session_id] = historial
 
         return respuesta_texto

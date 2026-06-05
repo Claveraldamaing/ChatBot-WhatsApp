@@ -59,4 +59,16 @@ class PaqueteRepository:
                     (paquete_id,),
                 )
                 return cur.rowcount > 0
+    def get_activos_para_ia(self):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                """
+                SELECT nombre_paquete, descripcion, precio, estado
+                FROM paquetes
+                WHERE estado = 'activo'
+                ORDER BY idPaquetes
+                """
+                )
+                return cur.fetchall()    
  
