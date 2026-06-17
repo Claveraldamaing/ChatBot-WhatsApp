@@ -14,6 +14,18 @@ class EventoRepository:
                 )
                 return cur.fetchall()
 
+    def get_all_para_ia(self):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT nombre, descripcion
+                    FROM eventos
+                    ORDER BY idEventos
+                    """
+                )
+                return cur.fetchall()
+
     def get_by_id(self, evento_id: int):
         with get_connection() as conn:
             with conn.cursor() as cur:

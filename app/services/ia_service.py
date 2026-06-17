@@ -3,6 +3,7 @@ from openai import OpenAI
 from app.core.config import settings
 from app.repositories.mensajes_ia_repository import MensajesIARepository
 from app.repositories.paquete_repository import PaqueteRepository
+from app.repositories.evento_repository import EventoRepository
 
 
 client = OpenAI(
@@ -15,6 +16,7 @@ class IAService:
     def __init__(self):
         self.mensajes_repository = MensajesIARepository()
         self.paquete_repository = PaqueteRepository()
+        self.evento_repository = EventoRepository()
 
     def responder(self, texto: str, id_clientes: int) -> str:
 
@@ -31,6 +33,14 @@ class IAService:
             ]
         )
         paquetes = self.paquete_repository.get_activos_para_ia()
+        eventos = self.evento_repository.get_all_para_ia()
+
+        eventos_texto = "\n".join(
+        [
+        f"- {evento[0]}: {evento[1]}"
+        for evento in eventos
+        ]
+        )
 
         paquetes_texto = "\n".join(
          [
@@ -46,6 +56,9 @@ Eres un chatbot inteligente especializado en la atención y gestión de eventos 
 
 OBJETIVO:
 Ayudar a los clientes a consultar información, solicitar cotizaciones y realizar reservas de eventos mediante WhatsApp.
+
+EVENTOS DISPONIBLES EN BASE DE DATOS:
+{eventos_texto}
 
 PAQUETES DISPONIBLES EN BASE DE DATOS:
 {paquetes_texto}
