@@ -6,7 +6,7 @@ app = FastAPI()
 
 # 1. Credenciales vinculadas con Meta Developers -Esta información es para que se pueda conectar el servidor con meta.ia developers-
 VERIFY_TOKEN = "adonaiibuga" 
-WHATSAPP_TOKEN = "EAAWATIXFnCEBRrsfUnq44vAGDfIVFJLjMXZAaOlLHCogVxiktq2nJq7UGRo5sUZAO1MxJ5ekfeD5iNdCQIGfNSMBUTdC4j3so3B8T81A3W1xpvyiIjmRUs25xbN0sSi6zfpG24TdnyOyIcAoV8iIbpUEtb8kxPHKEoZCmJDdDRMNFzuJ5t1RtjSECOIxyvQ9nbC4uTyBucCbpcFx9uOGIZAbJ77vwVKpYr0JiU37"
+WHATSAPP_TOKEN = "EAAWATIXFnCEBRgsjG5MGnVjqSUZAbrZAGcF98yGCXrkiaiEtY7gO2ZB2AdtDgaZAvZCRKauAeQK64q9IwM6PD8tS0qu365hZCe8sQKoZA5Uc9HTPha91DZBLdin6IFF4SxiZB6ddOGOVc99PTo9nCZBeekWxhWzTcnjabuZB91ENZCxGhA7G34L0mms8l7fFAQDFkPdgoPG4OlhBt0VQ5X7ZCaKVQhshfhIHyzZAEDp1rXMWpFgCYTC33vCKHBQdmZAtLvjK3lAIzoY6EGBiyOweY7NClI86kZBrFIsZD"
 PHONE_NUMBER_ID = "1040672982473670"
 
 @app.get("/webhook")
