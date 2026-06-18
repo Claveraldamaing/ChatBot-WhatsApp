@@ -15,7 +15,9 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     form_cliente_url: str = os.getenv("FORM_CLIENTE_URL", "")
     form_reserva_url: str = os.getenv("FORM_RESERVA_URL", "")
-
+    whatsapp_token: str = os.getenv("WHATSAPP_TOKEN", "")
+    phone_number_id: str = os.getenv("PHONE_NUMBER_ID", "")
+    verify_token: str = os.getenv("VERIFY_TOKEN", "")
 
 
     @property
