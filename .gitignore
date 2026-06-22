@@ -5,3 +5,5 @@ __pycache__/
 .pytest_cache/
 .idea/
 .vscode/
+whatsapp-bridge/node_modules/
+whatsapp-bridge/.wwebjs_auth/

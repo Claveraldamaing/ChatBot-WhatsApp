@@ -58,3 +58,27 @@ class ClienteRepository:
                     (cliente_id,),
                 )
                 return cur.rowcount > 0
+    def get_by_telefono(self, telefono: str):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT idClientes, nombre, telefono, email, fecha_registro
+                    FROM clientes
+                    WHERE telefono = %s
+                    """,
+                    (telefono,),
+                )
+                return cur.fetchone()
+    def create_simple(self, telefono: str):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO clientes (nombre, telefono)
+                    VALUES (%s, %s)
+                    RETURNING idClientes
+                    """,
+                    (f"Cliente {telefono}", telefono),
+                )
+                return cur.fetchone()[0]
