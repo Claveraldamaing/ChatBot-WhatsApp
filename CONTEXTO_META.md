@@ -1,53 +1,96 @@
 # Contexto del Proyecto - ChatBot WhatsApp
 
 ## Que es este proyecto
-Backend universitario (UCV - 8vo ciclo, Gestion de Proyectos) para un chatbot inteligente de reservas de eventos por WhatsApp usando FastAPI + PostgreSQL + OpenAI.
+Backend universitario (UCV - 8vo ciclo, Gestion de Proyectos) para un chatbot inteligente de reservas de eventos infantiles por WhatsApp usando FastAPI + PostgreSQL + OpenAI.
 
-## Arquitectura (por capas)
+## Integrantes del equipo (5)
+- **Clavoxx** (dueño del repo) — Limpieza, Bridge, Coordinacion general
+- **Erick** — IA, Formularios, Flujo de registro y reserva de clientes
+- **Patrick** — Frontend (panel admin)
+- **Jefferson** — Frontend (panel admin)
+- **Juan** — Recordatorios y Pagos
+
+## Arquitectura del proyecto
 ```
 ChatBot_WhatsApp/
-├── app/
-│   ├── main.py                  # Punto de entrada FastAPI
+├── app/                          # Backend FastAPI
+│   ├── main.py                   # Punto de entrada FastAPI
 │   ├── api/
-│   │   ├── router.py            # Registro de routers
-│   │   └── routes/              # Endpoints HTTP
-│   │       ├── clientes.py, eventos.py, paquetes.py, ...
-│   │       └── whatsapp.py      # Webhook Meta + endpoint local
-│   ├── schemas/
+│   │   ├── router.py             # Registro de routers
+│   │   └── routes/               # Endpoints HTTP
+│   │       ├── clientes.py       # CRUD clientes
+│   │       ├── eventos.py        # CRUD eventos
+│   │       ├── paquetes.py       # CRUD paquetes
+│   │       ├── paquetes_eventos.py # Relacion paquete-evento
+│   │       ├── reservas.py       # CRUD reservas
+│   │       ├── detalle_reserva.py # CRUD detalle reserva
+│   │       ├── pagos.py          # CRUD pagos
+│   │       ├── ia.py             # Endpoint de IA
+│   │       └── whatsapp.py       # Webhook Meta + endpoint local
+│   ├── schemas/                  # Modelos Pydantic
 │   ├── services/
-│   │   ├── ia_service.py        # Logica OpenAI
-│   │   └── whatsapp_service.py  # Servicio de WhatsApp
-│   ├── repositories/
-│   │   └── cliente_repository.py  # get_by_telefono + create_simple
+│   │   ├── ia_service.py         # Logica OpenAI
+│   │   └── whatsapp_service.py   # Servicio de WhatsApp
+│   ├── repositories/             # SQL directo (sin ORM)
+│   │   ├── cliente_repository.py
+│   │   ├── evento_repository.py
+│   │   ├── paquete_repository.py
+│   │   ├── paquete_evento_repository.py
+│   │   ├── reserva_repository.py
+│   │   ├── detalle_reserva_repository.py
+│   │   ├── pago_repository.py
+│   │   └── mensajes_ia_repository.py
 │   └── core/
-├── whatsapp-bridge/             # Bridge local (Node.js)
+│       ├── config.py             # Variables de entorno
+│       └── database.py           # Conexion a PostgreSQL
+├── frontend/                     # Panel admin (Patrick + Jefferson)
+├── whatsapp-bridge/              # Bridge local (Node.js)
 │   ├── package.json
-│   └── bridge.js                # whatsapp-web.js, escucha QR
+│   └── bridge.js                 # whatsapp-web.js, escucha QR
 ├── docs/
 │   └── ACTUALIZACION_BRIDGE_LOCAL.md
-└── CONTEXTO_META.md
+├── CONTEXTO_META.md
+└── AGENTS.md
 ```
 
-## Estado actual
-- Webhook de WhatsApp migrado y funcional ✅
+## Estado actual del proyecto (Junio 2026)
+- 9 modulos backend implementados (clientes, eventos, paquetes, paquetes_eventos, reservas, detalle_reserva, pagos, ia, whatsapp) ✅
 - Bridge local (`whatsapp-web.js`) implementado y conectado ✅
 - Flujo completo: mensaje WhatsApp → bridge → FastAPI → IA → respuesta ✅
 - Solo responde a numeros NO guardados en contactos (no interfiere con uso personal) ✅
-- `ClienteRepository` con `get_by_telefono` y `create_simple` ✅
-- Endpoint `POST /webhook-local` para recibir mensajes del bridge ✅
-- Meta API `enviar_respuesta()` falla por cuenta restringida (irrelevante, bridge responde)
+- BD PostgreSQL con 12 tablas y datos de prueba ✅
+- Meta API `enviar_respuesta()` falla por cuenta restringida (bridge local la reemplaza)
+- Instalador ngrok y Pasos para activar.txt eliminados (obsoletos)
+
+## Modulos pendientes (en desarrollo)
+- Frontend (panel admin) — Patrick + Jefferson
+- Formularios (repo, service, route, schema) — Erick
+- Usuarios (login para el panel) — Patrick + Jefferson
+- Recordatorios (completo) — Juan
+- Pagos (mejora: confirmar, pendientes) — Juan
+- IA mejorada (flujo cliente nuevo vs existente, formularios) — Erick
 
 ## Problema con Meta Business
 - Cuenta "Show Infantiles" restringida por "violacion de terminos"
 - No se puede usar el webhook oficial
-- Solucion temporal: bridge local con whatsapp-web.js
+- Solucion actual: bridge local con whatsapp-web.js
 
-## Soluciones pendientes para webhook oficial
-1. Apelar la restriccion
-2. Pedir al companero que agregue como admin a su app
-3. Bridge local funciona para testing/presentacion
+## Base de Datos (PostgreSQL)
+12 tablas en `creacion_bd.sql`:
+1. `clientes` - Datos de clientes (nombre, telefono, email)
+2. `mensajes_ia` - Historial de conversaciones con la IA
+3. `eventos` - Tipos de evento (Cumpleanos, Baby Shower)
+4. `paquetes` - Paquetes (Basico S/300, Premium S/500, Hora Extra S/80)
+5. `paquetes_eventos` - Relacion muchos-a-muchos entre eventos y paquetes
+6. `reservas` - Reservas hechas por clientes
+7. `detalle_reserva` - Items dentro de cada reserva
+8. `pagos` - Pagos realizados (Yape, transferencia)
+9. `tipo_formulario` - Tipos de formularios
+10. `formularios` - Formularios enviados y sus respuestas
+11. `recordatorios` - Recordatorios programados
+12. `usuarios` - Usuarios del sistema (admin)
 
-## Como levantar el proyecto (para desarrollo local)
+## Como levantar el proyecto
 
 **Terminal 1 — FastAPI:**
 ```bash
@@ -61,10 +104,10 @@ node bridge.js
 # Escanear QR con WhatsApp
 ```
 
-Luego abrir `http://127.0.0.1:8000/docs`
+**Terminal 3 — Frontend (opcional):**
+```bash
+# Abrir frontend/login.html en el navegador
+# O usar Live Server de VS Code
+```
 
-## ngrok (solo si se recupera cuenta Meta)
-- Instalado en `Instalador ngrok/`
-- `ngrok http 8000`
-- URL tipo `https://xxxx.ngrok-free.dev` + `/webhook`
-- Verify Token: `adonaiibuga`
+Luego abrir `http://127.0.0.1:8000/docs`
