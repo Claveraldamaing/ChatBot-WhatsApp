@@ -23,6 +23,16 @@ client.on('message', async msg => {
     const telefono = msg.from.replace('@c.us', '').replace('@lid', '');
     const texto = msg.body;
     console.log(`Mensaje de ${telefono}: ${texto}`);
+    const palabras_clave = [
+        'evento', 'paquete', 'reser', 'show', 'cumple', 'baby', 
+        'precio', 'cotiz', 'info', 'quie', 'quisie', 'hola', 'buen'
+    ];
+    const tiene_intencion = palabras_clave.some(p => texto.toLowerCase().includes(p));
+    if (!tiene_intencion) {
+        console.log(`Ignorado (sin intención): ${texto}`);
+        return;
+    }
+
     try {
         const res = await axios.post(FASTAPI_URL, {
             telefono: telefono,

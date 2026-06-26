@@ -6,7 +6,7 @@ from pydantic import BaseModel
 class ClienteBase(BaseModel):
     nombre: str
     telefono: str
-    email: str
+    email: str| None = None
 
 
 class ClienteCreate(ClienteBase):

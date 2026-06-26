@@ -59,8 +59,6 @@ ChatBot_WhatsApp/
 - Flujo completo: mensaje WhatsApp → bridge → FastAPI → IA → respuesta ✅
 - Solo responde a numeros NO guardados en contactos (no interfiere con uso personal) ✅
 - BD PostgreSQL con 12 tablas y datos de prueba ✅
-- Meta API `enviar_respuesta()` falla por cuenta restringida (bridge local la reemplaza)
-- Instalador ngrok y Pasos para activar.txt eliminados (obsoletos)
 
 ## Modulos pendientes (en desarrollo)
 - Frontend (panel admin) — Patrick + Jefferson
@@ -70,10 +68,7 @@ ChatBot_WhatsApp/
 - Pagos (mejora: confirmar, pendientes) — Juan
 - IA mejorada (flujo cliente nuevo vs existente, formularios) — Erick
 
-## Problema con Meta Business
-- Cuenta "Show Infantiles" restringida por "violacion de terminos"
-- No se puede usar el webhook oficial
-- Solucion actual: bridge local con whatsapp-web.js
+
 
 ## Base de Datos (PostgreSQL)
 12 tablas en `creacion_bd.sql`:

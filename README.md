@@ -4,7 +4,7 @@ Backend en FastAPI para un chatbot inteligente de reservas de eventos por WhatsA
 
 ## Objetivo
 
-Automatizar la atencion al cliente, mostrar eventos y paquetes, registrar reservas, gestionar pagos y almacenar historial conversacional usando FastAPI, PostgreSQL, WhatsApp API y OpenAI.
+Automatizar la atencion al cliente, mostrar eventos y paquetes, registrar reservas, gestionar pagos y almacenar historial conversacional usando FastAPI, PostgreSQL y OpenAI.
 
 ## Flujo del proyecto
 
@@ -22,10 +22,8 @@ Automatizar la atencion al cliente, mostrar eventos y paquetes, registrar reserv
 - PostgreSQL
 - psycopg
 - Python
-- WhatsApp Cloud API
 - OpenAI API
 - Google Forms
-- ngrok
 
 ## Estructura actual
 
