@@ -86,13 +86,14 @@ class ReservaRepository:
                 )
                 return cur.fetchall()
 
-    def create(self, data: dict):
+    def create(self, data: dict) -> int:
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
                     INSERT INTO reservas (idClientes, fecha_evento, hora_evento, estado, total_reserva)
                     VALUES (%s, %s, %s, %s, %s)
+                    RETURNING idReservas
                     """,
                     (
                         data["idClientes"],
@@ -102,6 +103,7 @@ class ReservaRepository:
                         data["total_reserva"],
                     ),
                 )
+                return cur.fetchone()[0]
 
     def update(self, reserva_id: int, data: dict) -> bool:
         with get_connection() as conn:

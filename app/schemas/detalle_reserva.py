@@ -6,6 +6,7 @@ class DetalleReservaBase(BaseModel):
     idPaquetesEventos: int
     cantidad: int
     precio_unitario: float
+    subtotal: float = 0
  
  
 class DetalleReservaCreate(DetalleReservaBase):

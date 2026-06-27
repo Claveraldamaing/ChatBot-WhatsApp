@@ -49,14 +49,15 @@ class DetalleReservaRepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO detalle_reserva (idReservas, idPaquetesEventos, cantidad, precio_unitario)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO detalle_reserva (idReservas, idPaquetesEventos, cantidad, precio_unitario, subtotal)
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
                     (
                         data["idReservas"],
                         data["idPaquetesEventos"],
                         data["cantidad"],
                         data["precio_unitario"],
+                        data["subtotal"],
                     ),
                 )
 
@@ -67,7 +68,7 @@ class DetalleReservaRepository:
                     """
                     UPDATE detalle_reserva
                     SET idReservas = %s, idPaquetesEventos = %s,
-                        cantidad = %s, precio_unitario = %s
+                        cantidad = %s, precio_unitario = %s, subtotal = %s
                     WHERE idDetalleReserva = %s
                     """,
                     (
@@ -75,6 +76,7 @@ class DetalleReservaRepository:
                         data["idPaquetesEventos"],
                         data["cantidad"],
                         data["precio_unitario"],
+                        data["subtotal"],
                         detalle_id,
                     ),
                 )

@@ -145,16 +145,12 @@ Si el cliente menciona palabras como:
 - cumpleaños
 - show infantil
 
-Debes solicitar los siguientes datos:
-- Fecha del evento.
-- Tipo de evento.
-- Cantidad de invitados.
-- Ubicación.
-
-Además, comparte inmediatamente el formulario de reserva.
+No solicites datos del evento (fecha, tipo, invitados, ubicación).
+El formulario de reserva ya los solicita.
+Comparte inmediatamente el enlace del formulario de reserva.
 
 Formulario de Reserva:
-{settings.form_reserva_url}
+{settings.ngrok_url}/formulario/reserva?telefono={cliente[2]}
 
 3. COTIZACIONES
 

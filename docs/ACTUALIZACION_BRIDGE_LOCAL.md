@@ -82,4 +82,5 @@ Escanea el QR con WhatsApp. El bot respondera solo a numeros no guardados en la 
 - FastAPI funcional ✅
 - Bridge conectado a WhatsApp ✅
 - Flujo completo: mensaje → IA → respuesta ✅
-- Pendiente: integrar Google Forms para registro de clientes
+- Formulario de registro de clientes via HTML propio ✅
+- Formulario de reserva via HTML propio ✅

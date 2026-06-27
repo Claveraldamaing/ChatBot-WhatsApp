@@ -20,8 +20,8 @@ class ReservaService:
         reservas = self.repository.get_by_cliente(cliente_id)
         return [ReservaResponse(**self._normalize(r)) for r in reservas]
 
-    def create_reserva(self, data: ReservaCreate):
-        self.repository.create(data.model_dump())
+    def create_reserva(self, data: ReservaCreate) -> int:
+        return self.repository.create(data.model_dump())
 
     def update_reserva(self, reserva_id: int, data: ReservaCreate) -> bool:
         return self.repository.update(reserva_id, data.model_dump())

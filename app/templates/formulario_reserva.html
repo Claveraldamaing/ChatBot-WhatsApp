@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva de Evento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 24px; }
+        label { display: block; margin-bottom: 6px; color: #555; font-weight: bold; }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { background: #1da851; }
+        .resumen {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .resumen p { margin: 4px 0; }
+        .mensaje {
+            text-align: center;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            display: none;
+        }
+        .exito { background: #d4edda; color: #155724; display: block; }
+        .error { background: #f8d7da; color: #721c24; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Reserva de Evento</h1>
+        <form id="formReserva">
+            <label>Teléfono</label>
+            <input type="text" id="telefono" readonly>
+            <label>Tipo de Evento</label>
+            <select id="evento" required>
+                <option value="">Seleccione un evento</option>
+            </select>
+            <label>Paquete</label>
+            <select id="paquete" required>
+                <option value="">Seleccione un evento primero</option>
+            </select>
+            <label>Fecha del Evento</label>
+            <input type="date" id="fecha_evento" required>
+            <label>Hora del Evento</label>
+            <input type="time" id="hora_evento" required>
+            <label>Cantidad</label>
+            <input type="number" id="cantidad" value="1" min="1" required>
+            <div class="resumen" id="resumen">
+                <p><strong>Precio unitario:</strong> S/ <span id="precio">0.00</span></p>
+                <p><strong>Total estimado:</strong> S/ <span id="total">0.00</span></p>
+            </div>
+            <button type="submit">Reservar</button>
+        </form>
+        <div id="mensaje" class="mensaje"></div>
+    </div>
+    <script>
+        const telefono = new URLSearchParams(window.location.search).get('telefono') || '';
+        document.getElementById('telefono').value = telefono;
+        let paquetes = [];
+        let relaciones = [];
+        async function cargarDatos() {
+            try {
+                const [resEv, resPaq, resRel] = await Promise.all([
+                    fetch('/api/eventos'),
+                    fetch('/api/paquetes'),
+                    fetch('/api/paquetes-eventos')
+                ]);
+                const eventos = await resEv.json();
+                paquetes = await resPaq.json();
+                relaciones = await resRel.json();
+                const selEvento = document.getElementById('evento');
+                eventos.forEach(ev => {
+                    const opt = document.createElement('option');
+                    opt.value = ev.id;
+                    opt.textContent = ev.nombre;
+                    selEvento.appendChild(opt);
+                });
+            } catch (err) {
+                console.error('Error cargando datos:', err);
+            }
+        }
+        document.getElementById('evento').addEventListener('change', function() {
+            const selPaquete = document.getElementById('paquete');
+            selPaquete.innerHTML = '<option value="">Seleccione un paquete</option>';
+            if (!this.value) return;
+            const rels = relaciones.filter(r => r.idEventos === parseInt(this.value));
+            rels.forEach(rel => {
+                const paq = paquetes.find(p => p.id === rel.idPaquetes);
+                if (paq) {
+                    const opt = document.createElement('option');
+                    opt.value = rel.id;
+                    opt.textContent = `${paq.nombre} - S/ ${paq.precio}`;
+                    opt.dataset.precio = paq.precio;
+                    selPaquete.appendChild(opt);
+                }
+            });
+        });
+        document.getElementById('paquete').addEventListener('change', actualizarResumen);
+        document.getElementById('cantidad').addEventListener('input', actualizarResumen);
+        function actualizarResumen() {
+            const sel = document.getElementById('paquete');
+            const opt = sel.options[sel.selectedIndex];
+            const cantidad = parseInt(document.getElementById('cantidad').value) || 1;
+            const precio = opt && opt.dataset.precio ? parseFloat(opt.dataset.precio) : 0;
+            document.getElementById('precio').textContent = precio.toFixed(2);
+            document.getElementById('total').textContent = (precio * cantidad).toFixed(2);
+        }
+        document.getElementById('formReserva').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const selPaquete = document.getElementById('paquete');
+            const opt = selPaquete.options[selPaquete.selectedIndex];
+            const data = {
+                telefono: document.getElementById('telefono').value,
+                fecha_evento: document.getElementById('fecha_evento').value,
+                hora_evento: document.getElementById('hora_evento').value + ':00',
+                idPaquetesEventos: parseInt(selPaquete.value),
+                cantidad: parseInt(document.getElementById('cantidad').value)
+            };
+            try {
+                const res = await fetch('/formulario/reserva', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    document.getElementById('mensaje').className = 'mensaje exito';
+                    document.getElementById('mensaje').innerHTML = `
+                        <strong>¡Reserva creada con éxito!</strong><br>
+                        N° Reserva: ${result.idReserva}<br>
+                        Total: S/ ${result.total}<br>
+                        Estado: ${result.estado}<br><br>
+                        Vuelve a WhatsApp para coordinar el pago.
+                    `;
+                    document.getElementById('formReserva').style.display = 'none';
+                } else {
+                    document.getElementById('mensaje').className = 'mensaje error';
+                    document.getElementById('mensaje').textContent = 'Error: ' + (result.error || 'No se pudo registrar la reserva');
+                }
+            } catch (err) {
+                document.getElementById('mensaje').className = 'mensaje error';
+                document.getElementById('mensaje').textContent = 'Error de conexión con el servidor';
+            }
+        });
+        cargarDatos();
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # ChatBot WhatsApp
 
-Backend en FastAPI para un chatbot inteligente de reservas de eventos por WhatsApp.
+Backend en FastAPI para un chatbot inteligente de reservas de eventos infantiles por WhatsApp.
 
 ## Objetivo
 
@@ -9,106 +9,195 @@ Automatizar la atencion al cliente, mostrar eventos y paquetes, registrar reserv
 ## Flujo del proyecto
 
 1. El cliente escribe al WhatsApp de la empresa.
-2. El chatbot responde automaticamente con informacion de eventos y paquetes.
-3. La IA responde dudas usando informacion guardada en la base de datos.
-4. Cuando el cliente desea reservar, se le envia un Google Forms.
-5. La reserva se registra en PostgreSQL.
-6. El sistema calcula total, registra pagos y envia recordatorios.
-7. Despues del evento, se envia un formulario de satisfaccion.
+2. El bridge local (`whatsapp-web.js`) recibe el mensaje y lo reenvia a FastAPI.
+3. El sistema revisa si el numero existe en BD.
+4. Si es **cliente nuevo** → el bot envia link de formulario de registro.
+5. Si es **cliente existente** → IA responde o envia link de formulario de reserva.
+6. Cuando se llena el formulario de reserva, se crea la reserva + detalle en BD.
+7. El cliente paga y envia comprobante, el admin confirma el pago.
+8. Se gestionan recordatorios y seguimiento posterior.
 
 ## Tecnologias
 
-- FastAPI
-- PostgreSQL
-- psycopg
-- Python
-- OpenAI API
-- Google Forms
+- FastAPI (Python)
+- PostgreSQL (psycopg, sin ORM)
+- OpenAI GPT-4o-mini
+- whatsapp-web.js (Node.js)
+- HTML/CSS/JS puro (formularios embebidos)
 
-## Estructura actual
+## Arquitectura por capas
 
-```text
+```
 app/
-├─ main.py
-├─ api/
-│  ├─ router.py
-│  └─ routes/
-│     └─ clientes.py
-├─ core/
-│  ├─ config.py
-│  └─ database.py
-├─ repositories/
-│  └─ cliente_repository.py
-├─ schemas/
-│  └─ cliente.py
-└─ services/
-   └─ cliente_service.py
+├── main.py                 # Arranque de FastAPI
+├── api/
+│   ├── router.py           # Registro de routers
+│   └── routes/             # Endpoints HTTP (uno por modulo)
+├── core/
+│   ├── config.py           # Variables de entorno
+│   └── database.py         # Conexion a PostgreSQL
+├── repositories/           # Consultas SQL directo (SOLO AQUI)
+├── schemas/                # Modelos Pydantic
+├── services/               # Logica de negocio
+└── templates/              # Formularios HTML
 ```
 
-## Arquitectura
+## Estructura actual del proyecto
 
-El proyecto usa arquitectura por capas:
+```
+ChatBot_WhatsApp/
+├── app/
+│   ├── main.py
+│   ├── api/
+│   │   ├── router.py
+│   │   └── routes/
+│   │       ├── clientes.py
+│   │       ├── eventos.py
+│   │       ├── paquetes.py
+│   │       ├── paquetes_eventos.py
+│   │       ├── reservas.py
+│   │       ├── detalle_reserva.py
+│   │       ├── pagos.py
+│   │       ├── ia.py
+│   │       ├── whatsapp.py
+│   │       └── formularios.py
+│   ├── schemas/
+│   │   ├── cliente.py
+│   │   ├── evento.py
+│   │   ├── paquete.py
+│   │   ├── paquete_evento.py
+│   │   ├── reserva.py
+│   │   ├── detalle_reserva.py
+│   │   ├── pago.py
+│   │   └── ia.py
+│   ├── services/
+│   │   ├── cliente_service.py
+│   │   ├── evento_service.py
+│   │   ├── paquete_service.py
+│   │   ├── paquete_evento_service.py
+│   │   ├── reserva_service.py
+│   │   ├── detalle_reserva_service.py
+│   │   ├── pago_service.py
+│   │   ├── ia_service.py
+│   │   └── whatsapp_service.py
+│   ├── repositories/
+│   │   ├── cliente_repository.py
+│   │   ├── evento_repository.py
+│   │   ├── paquete_repository.py
+│   │   ├── paquete_evento_repository.py
+│   │   ├── reserva_repository.py
+│   │   ├── detalle_reserva_repository.py
+│   │   ├── pago_repository.py
+│   │   └── mensajes_ia_repository.py
+│   ├── core/
+│   │   ├── config.py
+│   │   └── database.py
+│   └── templates/
+│       ├── formulario_clientes.html
+│       └── formulario_reserva.html
+├── whatsapp-bridge/
+│   ├── bridge.js
+│   └── package.json
+├── docs/
+│   ├── ACTUALIZACION_BRIDGE_LOCAL.md
+│   └── BD.md
+├── .env
+├── .gitignore
+├── requirements.txt
+├── AGENTS.md
+├── CONTEXTO_META.md
+└── README.md
+```
 
-- `main.py`: arranque de la aplicacion
-- `api/routes/`: endpoints HTTP
-- `schemas/`: validacion de entrada y salida
-- `services/`: logica del negocio
-- `repositories/`: consultas SQL
-- `core/`: configuracion y conexion a BD
+## Modulos implementados (9)
+
+| Modulo | Route | Schema | Service | Repository | Estado |
+|--------|-------|--------|---------|------------|--------|
+| clientes | ✅ | ✅ | ✅ | ✅ | Completo |
+| eventos | ✅ | ✅ | ✅ | ✅ | Completo |
+| paquetes | ✅ | ✅ | ✅ | ✅ | Completo |
+| paquetes_eventos | ✅ | ✅ | ✅ | ✅ | Completo |
+| reservas | ✅ | ✅ | ✅ | ✅ | Completo |
+| detalle_reserva | ✅ | ✅ | ✅ | ✅ | Completo |
+| pagos | ✅ | ✅ | ✅ | ✅ | Basico |
+| ia | ✅ | ✅ | ✅ | repo mensajes | Basico |
+| whatsapp | ✅ | — | ✅ | — | Funcional |
+| formularios | ✅ | — | — | — | Parcial |
+
+## Endpoints disponibles
+
+### API REST
+- `GET /api/clientes`
+- `GET /api/clientes/{id}`
+- `POST /api/clientes`
+- `PUT /api/clientes/{id}`
+- `DELETE /api/clientes/{id}`
+- `GET /api/eventos`
+- `GET /api/eventos/{id}`
+- `POST /api/eventos`
+- `GET /api/paquetes`
+- `GET /api/paquetes/{id}`
+- `POST /api/paquetes`
+- `GET /api/paquetes-eventos`
+- `GET /api/eventos/{id}/paquetes`
+- `POST /api/paquetes-eventos`
+- `GET /api/reservas`
+- `GET /api/reservas/{id}`
+- `GET /api/clientes/{id}/reservas`
+- `POST /api/reservas`
+- `GET /api/detalle-reserva`
+- `GET /api/detalle-reserva/{id}`
+- `GET /api/reservas/{id}/detalle`
+- `POST /api/detalle-reserva`
+- `GET /api/pagos`
+- `POST /api/pagos`
+- `POST /api/ia`
+- `POST /webhook-local`
+
+### Formularios
+- `GET /formulario/cliente?telefono=XXX`
+- `GET /formulario/reserva?telefono=XXX`
+- `POST /formulario/reserva`
 
 ## Base de datos
 
-La base de datos del proyecto contempla estas tablas:
+Base de datos PostgreSQL con 12 tablas. Documentacion completa en `docs/BD.md`.
 
-- `clientes`
-- `mensajes_ia`
-- `eventos`
-- `paquetes`
-- `paquetes_eventos`
-- `reservas`
-- `detalle_reserva`
-- `pagos`
-- `tipo_formulario`
-- `formularios`
-- `recordatorios`
-- `usuarios`
-
-## Modulo actual
-
-Actualmente esta implementado el modulo `clientes` con rutas CRUD.
-
-Endpoints disponibles:
-
-- `GET /api/clientes`
-- `GET /api/clientes/{cliente_id}`
-- `POST /api/clientes`
-- `PUT /api/clientes/{cliente_id}`
-- `DELETE /api/clientes/{cliente_id}`
+| Tabla | Descripcion |
+|-------|-------------|
+| clientes | Datos de clientes |
+| mensajes_ia | Historial de conversaciones con IA |
+| eventos | Tipos de evento (Cumpleaños, Baby Shower) |
+| paquetes | Paquetes disponibles (Basico, Premium, Hora Extra) |
+| paquetes_eventos | Relacion muchos-a-muchos eventos-paquetes |
+| reservas | Reservas realizadas por clientes |
+| detalle_reserva | Items dentro de cada reserva |
+| pagos | Pagos realizados (Yape, transferencia) |
+| tipo_formulario | Tipos de formulario |
+| formularios | Formularios enviados y respuestas |
+| recordatorios | Recordatorios programados |
+| usuarios | Usuarios del sistema (admin) |
 
 ## Como ejecutar el proyecto
 
-1. Activar el entorno virtual.
-2. Instalar dependencias:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Levantar el servidor:
-
+**Terminal 1 — FastAPI:**
 ```bash
 venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ```
 
-4. Abrir la documentacion:
+**Terminal 2 — Bridge WhatsApp (Node.js):**
+```bash
+cd whatsapp-bridge
+node bridge.js
+# Escanear QR con WhatsApp
+```
 
-```text
+**Acceder a la documentacion:**
+```
 http://127.0.0.1:8000/docs
 ```
 
-## Variables de entorno recomendadas
-
-Crear un archivo `.env` con valores como estos:
+## Variables de entorno (`.env`)
 
 ```env
 DB_NAME=proyecto_chatbot
@@ -116,8 +205,8 @@ DB_USER=postgres
 DB_PASSWORD=12345
 DB_HOST=localhost
 DB_PORT=5432
+OPENAI_API_KEY=sk-...
+NGROK_URL=https://tu-url.ngrok-free.dev
+FORM_CLIENTE_URL=https://forms.gle/...     # Opcional
+FORM_RESERVA_URL=https://forms.gle/...     # Opcional
 ```
-
-## Estado del proyecto
-
-Este proyecto esta en fase inicial. Ya se ordeno la estructura base en FastAPI y el siguiente paso es implementar los modulos de `eventos`, `paquetes` y `reservas`.
