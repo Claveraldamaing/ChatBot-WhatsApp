@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.repositories.mensajes_ia_repository import MensajesIARepository
 from app.repositories.paquete_repository import PaqueteRepository
 from app.repositories.evento_repository import EventoRepository
+from app.repositories.cliente_repository import ClienteRepository
 
 
 client = OpenAI(
@@ -17,6 +18,7 @@ class IAService:
         self.mensajes_repository = MensajesIARepository()
         self.paquete_repository = PaqueteRepository()
         self.evento_repository = EventoRepository()
+        self.cliente_repository = ClienteRepository()
 
     def responder(self, texto: str, id_clientes: int) -> str:
 
@@ -34,6 +36,17 @@ class IAService:
         )
         paquetes = self.paquete_repository.get_activos_para_ia()
         eventos = self.evento_repository.get_all_para_ia()
+        cliente = self.cliente_repository.get_by_id(id_clientes)
+
+        if cliente:
+            cliente_texto = f"""
+- ID: {cliente[0]}
+- Nombre: {cliente[1]}
+- Telefono: {cliente[2]}
+- Email: {cliente[3] or "No registrado"}
+"""
+        else:
+            cliente_texto = "No se encontro informacion del cliente registrado."
 
         eventos_texto = "\n".join(
         [
@@ -57,6 +70,9 @@ Eres un chatbot inteligente especializado en la atención y gestión de eventos 
 OBJETIVO:
 Ayudar a los clientes a consultar información, solicitar cotizaciones y realizar reservas de eventos mediante WhatsApp.
 
+CLIENTE REGISTRADO:
+{cliente_texto}
+
 EVENTOS DISPONIBLES EN BASE DE DATOS:
 {eventos_texto}
 
@@ -74,14 +90,18 @@ COMPORTAMIENTO:
 - Usa el historial de conversación para no repetir preguntas que el cliente ya respondió.
 - Si el cliente ya indicó un dato, recuérdalo y continúa solicitando solo los datos faltantes.
 
+- Este cliente ya esta registrado en la base de datos.
+- No envies el Formulario de Cliente ni FORM_CLIENTE_URL a clientes registrados.
+- Si el nombre del cliente esta disponible, saludalo por su nombre de forma natural.
+- Usa unicamente los datos del cliente mostrados en CLIENTE REGISTRADO.
+- No inventes nombre, telefono, email ni otros datos del cliente.
+- Solo envia el Formulario de Reserva cuando el cliente quiera reservar, cotizar, agendar o consultar disponibilidad.
+
 REGLAS IMPORTANTES:
 
 1. CONSULTAS GENERALES
 
-Si el cliente solicita información general, paquetes, servicios o desea conocer más sobre la empresa, responde la consulta y comparte el formulario de registro de cliente.
-
-Formulario de Cliente:
-{settings.form_cliente_url}
+Si el cliente solicita informacion general, paquetes, servicios o desea conocer mas sobre la empresa, responde la consulta usando la informacion disponible. No envies el formulario de registro porque este cliente ya esta registrado.
 
 2. RESERVAS
 
