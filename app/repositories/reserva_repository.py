@@ -44,6 +44,48 @@ class ReservaRepository:
                 )
                 return cur.fetchall()
 
+    def get_contexto_ia_by_cliente(self, cliente_id: int):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        r.idReservas,
+                        r.idClientes,
+                        r.fecha_reserva,
+                        r.fecha_evento,
+                        r.hora_evento,
+                        r.estado,
+                        r.total_reserva,
+                        dr.idDetalleReserva,
+                        dr.cantidad,
+                        dr.precio_unitario,
+                        dr.subtotal,
+                        pe.idPaquetesEventos,
+                        p.idPaquetes,
+                        p.nombre_paquete,
+                        p.descripcion AS descripcion_paquete,
+                        p.precio AS precio_paquete,
+                        p.estado AS estado_paquete,
+                        e.idEventos,
+                        e.nombre AS nombre_evento,
+                        e.descripcion AS descripcion_evento
+                    FROM reservas r
+                    LEFT JOIN detalle_reserva dr
+                        ON dr.idReservas = r.idReservas
+                    LEFT JOIN paquetes_eventos pe
+                        ON pe.idPaquetesEventos = dr.idPaquetesEventos
+                    LEFT JOIN paquetes p
+                        ON p.idPaquetes = pe.idPaquetes
+                    LEFT JOIN eventos e
+                        ON e.idEventos = pe.idEventos
+                    WHERE r.idClientes = %s
+                    ORDER BY r.fecha_evento DESC, r.idReservas DESC, dr.idDetalleReserva
+                    """,
+                    (cliente_id,),
+                )
+                return cur.fetchall()
+
     def create(self, data: dict):
         with get_connection() as conn:
             with conn.cursor() as cur:

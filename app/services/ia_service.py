@@ -5,6 +5,7 @@ from app.repositories.mensajes_ia_repository import MensajesIARepository
 from app.repositories.paquete_repository import PaqueteRepository
 from app.repositories.evento_repository import EventoRepository
 from app.repositories.cliente_repository import ClienteRepository
+from app.repositories.reserva_repository import ReservaRepository
 
 
 client = OpenAI(
@@ -19,6 +20,7 @@ class IAService:
         self.paquete_repository = PaqueteRepository()
         self.evento_repository = EventoRepository()
         self.cliente_repository = ClienteRepository()
+        self.reserva_repository = ReservaRepository()
 
     def responder(self, texto: str, id_clientes: int) -> str:
 
@@ -37,6 +39,7 @@ class IAService:
         paquetes = self.paquete_repository.get_activos_para_ia()
         eventos = self.evento_repository.get_all_para_ia()
         cliente = self.cliente_repository.get_by_id(id_clientes)
+        reservas = self.reserva_repository.get_contexto_ia_by_cliente(id_clientes)
 
         if cliente:
             cliente_texto = f"""
@@ -47,6 +50,25 @@ class IAService:
 """
         else:
             cliente_texto = "No se encontro informacion del cliente registrado."
+
+        if reservas:
+            reservas_texto = "\n".join(
+                [
+                    (
+                        f"- Reserva #{reserva[0]} | Fecha evento: {reserva[3]} | "
+                        f"Hora: {reserva[4]} | Estado: {reserva[5]} | "
+                        f"Total: S/ {reserva[6]} | "
+                        f"Evento: {reserva[18] or 'No registrado'} | "
+                        f"Paquete: {reserva[13] or 'No registrado'} | "
+                        f"Cantidad: {reserva[8] if reserva[8] is not None else 'No registrada'} | "
+                        f"Precio unitario: {reserva[9] if reserva[9] is not None else 'No registrado'} | "
+                        f"Subtotal: {reserva[10] if reserva[10] is not None else 'No registrado'}"
+                    )
+                    for reserva in reservas
+                ]
+            )
+        else:
+            reservas_texto = "No hay reservas registradas para este cliente."
 
         eventos_texto = "\n".join(
         [
@@ -73,6 +95,9 @@ Ayudar a los clientes a consultar información, solicitar cotizaciones y realiza
 CLIENTE REGISTRADO:
 {cliente_texto}
 
+RESERVAS REGISTRADAS DEL CLIENTE:
+{reservas_texto}
+
 EVENTOS DISPONIBLES EN BASE DE DATOS:
 {eventos_texto}
 
@@ -96,6 +121,10 @@ COMPORTAMIENTO:
 - Usa unicamente los datos del cliente mostrados en CLIENTE REGISTRADO.
 - No inventes nombre, telefono, email ni otros datos del cliente.
 - Solo envia el Formulario de Reserva cuando el cliente quiera reservar, cotizar, agendar o consultar disponibilidad.
+- Si no hay reservas registradas, dilo claramente.
+- Si hay reservas registradas, responde sobre reservas usando solo los datos de RESERVAS REGISTRADAS DEL CLIENTE.
+- No inventes fechas, paquetes, eventos ni estados de reserva.
+- Si una reserva no tiene detalle, paquete o evento, indica que ese dato no esta registrado.
 
 REGLAS IMPORTANTES:
 
