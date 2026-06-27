@@ -13,12 +13,22 @@ class WhatsAppService:
 
     def procesar_mensaje_local(self, telefono: str, texto: str) -> str | None:
         cliente = self.cliente_repo.get_by_telefono(telefono)
+
         if cliente:
             id_clientes = cliente[0]
             print(f"Cliente existente: ID {id_clientes}")
-        else:
-            id_clientes = self.cliente_repo.create_simple(telefono)
-            print(f"Nuevo cliente creado con ID: {id_clientes}")
-        respuesta_ia = self.ia_service.responder(texto, id_clientes)
-        return respuesta_ia
+            respuesta_ia = self.ia_service.responder(texto, id_clientes)
+            return respuesta_ia
+
+        print(f"Cliente no registrado: {telefono}")
+        if settings.form_cliente_url:
+            return (
+                "Hola! Para poder atenderte mejor, primero necesitamos que te registres como cliente.\n"
+                f"Completa este formulario: {settings.form_cliente_url}"
+            )
+
+        return (
+            "Hola! Para poder atenderte mejor, primero necesitamos que te registres como cliente. "
+            "El formulario de registro no esta disponible por ahora."
+        )
             
