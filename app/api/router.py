@@ -9,6 +9,7 @@ from app.api.routes.eventos import router as eventos_router
 from app.api.routes.reservas import router as reservas_router
 from app.api.routes.pagos import router as pagos_router
 from app.api.routes.whatsapp import router as whatsapp_router
+from app.api.routes.formularios import router as formularios_router
 
 api_router = APIRouter()
 api_router.include_router(clientes_router)
@@ -36,3 +37,4 @@ api_router.include_router(eventos_router)
 api_router.include_router(reservas_router)
 api_router.include_router(whatsapp_router)
 api_router.include_router(pagos_router)
+api_router.include_router(formularios_router)

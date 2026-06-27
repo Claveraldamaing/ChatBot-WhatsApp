@@ -21,10 +21,10 @@ class WhatsAppService:
             return respuesta_ia
 
         print(f"Cliente no registrado: {telefono}")
-        if settings.form_cliente_url:
+        if settings.ngrok_url:
             return (
                 "Hola! Para poder atenderte mejor, primero necesitamos que te registres como cliente.\n"
-                f"Completa este formulario: {settings.form_cliente_url}"
+                f"Regístrate aquí: {settings.ngrok_url}/formulario/cliente?telefono={telefono}"
             )
 
         return (

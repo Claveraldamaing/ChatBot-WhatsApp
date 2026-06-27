@@ -8,7 +8,7 @@ class ReservaRepository:
                 cur.execute(
                     """
                     SELECT idReservas, idClientes, fecha_reserva,
-                           fecha_evento, hora_evento, estado, total_reserva
+                        fecha_evento, hora_evento, estado, total_reserva
                     FROM reservas
                     ORDER BY idReservas
                     """
@@ -21,7 +21,7 @@ class ReservaRepository:
                 cur.execute(
                     """
                     SELECT idReservas, idClientes, fecha_reserva,
-                           fecha_evento, hora_evento, estado, total_reserva
+                        fecha_evento, hora_evento, estado, total_reserva
                     FROM reservas
                     WHERE idReservas = %s
                     """,

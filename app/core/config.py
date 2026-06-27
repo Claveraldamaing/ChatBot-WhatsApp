@@ -15,7 +15,7 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     form_cliente_url: str = os.getenv("FORM_CLIENTE_URL", "")
     form_reserva_url: str = os.getenv("FORM_RESERVA_URL", "")
-
+    ngrok_url: str = os.getenv("NGROK_URL", "")
 
     @property
     def database_url(self) -> str:
