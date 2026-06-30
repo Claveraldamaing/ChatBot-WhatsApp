@@ -71,7 +71,7 @@ ChatBot_WhatsApp/
 
 
 ## Base de Datos (PostgreSQL)
-12 tablas en `creacion_bd.sql`:
+10 tablas en `creacion_bd.sql`:
 1. `clientes` - Datos de clientes (nombre, telefono, email)
 2. `mensajes_ia` - Historial de conversaciones con la IA
 3. `eventos` - Tipos de evento (Cumpleanos, Baby Shower)
@@ -80,10 +80,8 @@ ChatBot_WhatsApp/
 6. `reservas` - Reservas hechas por clientes
 7. `detalle_reserva` - Items dentro de cada reserva
 8. `pagos` - Pagos realizados (Yape, transferencia)
-9. `tipo_formulario` - Tipos de formularios
-10. `formularios` - Formularios enviados y sus respuestas
-11. `recordatorios` - Recordatorios programados
-12. `usuarios` - Usuarios del sistema (admin)
+9. `recordatorios` - Recordatorios programados
+10. `usuarios` - Usuarios del sistema (admin)
 
 ## Como levantar el proyecto
 

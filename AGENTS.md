@@ -59,7 +59,7 @@ app/
 - Nombres claros por modulo: cliente, evento, reserva, pago, etc.
 - Si se crea un modulo nuevo, crear sus 4 archivos: route, schema, service, repository.
 
-## Tablas de la BD (12 tablas)
+## Tablas de la BD (10 tablas)
 
 1. `clientes` - nombre, telefono, email, fecha_registro
 2. `mensajes_ia` - historial de conversaciones con rol, contenido, tipo, estado
@@ -69,10 +69,8 @@ app/
 6. `reservas` - idCliente, fecha_evento, hora_evento, estado, total
 7. `detalle_reserva` - items de la reserva (cantidad, subtotal)
 8. `pagos` - monto, metodo, estado, referencia
-9. `tipo_formulario` - tipos de formulario (registro, reserva, satisfaccion)
-10. `formularios` - formularios enviados (respuesta_json)
-11. `recordatorios` - recordatorios programados (tipo, mensaje, fecha)
-12. `usuarios` - login del sistema (nombre, email, password_hash, rol)
+9. `recordatorios` - recordatorios programados (tipo, mensaje, fecha)
+10. `usuarios` - login del sistema (nombre, email, password_hash, rol)
 
 ## Estado actual de modulos
 
@@ -83,8 +81,7 @@ app/
 
 ### En desarrollo / Pendientes
 - frontend/ (panel admin) - Patrick + Jefferson
-- formularios (routes, schema, service, repo) - Erick
 - usuarios (routes, schema, service, repo) - Patrick + Jefferson
 - recordatorios (routes, schema, service, repo) - Juan
 - pagos (mejora: confirmar, pendientes, historial) - Juan
-- ia_service.py (mejora: cliente nuevo vs existente, formularios) - Erick
+- ia_service.py (mejora: cliente nuevo vs existente) - Erick

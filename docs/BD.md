@@ -1,6 +1,6 @@
 # Base de Datos — ChatBot WhatsApp
 
-PostgreSQL con 12 tablas. Datos de prueba en `inserts.sql`.
+PostgreSQL con 10 tablas. Datos de prueba en `inserts.sql`.
 
 ---
 
@@ -12,7 +12,6 @@ clientes ──── mensajes_ia
     └──── reservas ──── detalle_reserva ──── paquetes_eventos ──── eventos
               │                                           └──── paquetes
               ├──── pagos
-              ├──── formularios ──── tipo_formulario
               └──── recordatorios
 
 usuarios (independiente)
@@ -185,50 +184,7 @@ INSERT INTO pagos (idReservas, monto_pagado, metodo_pago, estado, referencia) VA
 
 ---
 
-## 9. `tipo_formulario`
-
-Catalogos de tipos de formulario disponibles.
-
-| Columna | Tipo | Restricciones | Descripcion |
-|---------|------|---------------|-------------|
-| idTipoFormulario | `SERIAL` | `PRIMARY KEY` | ID unico del tipo |
-| nombre_tipo | `VARCHAR(50)` | `NOT NULL` | Nombre (ej: `'reserva'`, `'satisfaccion'`) |
-| descripcion | `TEXT` | — | Descripcion del formulario |
-| link_formulario | `TEXT` | `NOT NULL` | URL del formulario |
-| estado | `VARCHAR(30)` | `DEFAULT 'activo'` | `'activo'` o `'inactivo'` |
-
-```sql
-INSERT INTO tipo_formulario (nombre_tipo, descripcion, link_formulario, estado) VALUES
-('reserva', 'Formulario de reserva', 'https://forms.google.com/reserva', 'activo'),
-('satisfaccion', 'Formulario de satisfaccion', 'https://forms.google.com/satisfaccion', 'activo');
-```
-
----
-
-## 10. `formularios`
-
-Formularios enviados a clientes y sus respuestas.
-
-| Columna | Tipo | Restricciones | Descripcion |
-|---------|------|---------------|-------------|
-| idFormulario | `SERIAL` | `PRIMARY KEY` | ID unico del formulario |
-| idTipoFormulario | `INT` | `NOT NULL, FK → tipo_formulario(idTipoFormulario)` | Tipo de formulario |
-| idReservas | `INT` | `NOT NULL, FK → reservas(idReservas)` | Reserva asociada |
-| fecha_envio | `TIMESTAMP` | — | Cuando se envio al cliente |
-| fecha_respuesta | `TIMESTAMP` | — | Cuando el cliente respondio |
-| estado | `VARCHAR(30)` | `DEFAULT 'pendiente'` | `'pendiente'`, `'respondido'` |
-| respuesta_json | `JSONB` | — | Datos de la respuesta en JSON |
-| notificado_dueno | `BOOLEAN` | `DEFAULT FALSE` | Si se notifico al admin |
-| fecha_notificacion | `TIMESTAMP` | — | Cuando se notifico al admin |
-
-```sql
-INSERT INTO formularios (idTipoFormulario, idReservas, fecha_envio, estado, respuesta_json, notificado_dueno) VALUES
-(1, 1, CURRENT_TIMESTAMP, 'respondido', '{"tematica":"Spiderman","direccion":"Av Peru 123"}', true);
-```
-
----
-
-## 11. `recordatorios`
+## 9. `recordatorios`
 
 Recordatorios programados para eventos.
 
@@ -249,7 +205,7 @@ INSERT INTO recordatorios (idReservas, tipo, mensaje, fecha_programada, estado) 
 
 ---
 
-## 12. `usuarios`
+## 10. `usuarios`
 
 Usuarios del sistema (panel de administracion).
 
@@ -281,6 +237,4 @@ INSERT INTO usuarios (nombre, email, password_hash, rol, estado) VALUES
 | paquetes_eventos | idEventos | eventos(idEventos) |
 | paquetes_eventos | idPaquetes | paquetes(idPaquetes) |
 | pagos | idReservas | reservas(idReservas) |
-| formularios | idTipoFormulario | tipo_formulario(idTipoFormulario) |
-| formularios | idReservas | reservas(idReservas) |
 | recordatorios | idReservas | reservas(idReservas) |
