@@ -24,3 +24,6 @@ class ReservaResponse(ReservaBase):
 
 class MessageResponse(BaseModel):
     mensaje: str
+
+class ReservaUpdateEstado(BaseModel):
+    estado: str

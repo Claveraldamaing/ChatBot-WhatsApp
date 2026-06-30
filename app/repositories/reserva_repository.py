@@ -134,3 +134,12 @@ class ReservaRepository:
                     (reserva_id,),
                 )
                 return cur.rowcount > 0
+
+    def update_estado(self, reserva_id: int, estado: str) -> bool:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE reservas SET estado = %s WHERE idReservas = %s",
+                    (estado, reserva_id),
+                )
+                return cur.rowcount > 0

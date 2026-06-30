@@ -6,7 +6,7 @@ from app.repositories.paquete_repository import PaqueteRepository
 from app.repositories.evento_repository import EventoRepository
 from app.repositories.cliente_repository import ClienteRepository
 from app.repositories.reserva_repository import ReservaRepository
-
+from app.repositories.pago_repository import PagoRepository
 
 client = OpenAI(
     api_key=settings.openai_api_key
@@ -21,7 +21,8 @@ class IAService:
         self.evento_repository = EventoRepository()
         self.cliente_repository = ClienteRepository()
         self.reserva_repository = ReservaRepository()
-
+        self.pago_repository = PagoRepository()
+        
     def responder(self, texto: str, id_clientes: int) -> str:
 
         # Obtener historial anterior desde PostgreSQL
@@ -40,6 +41,7 @@ class IAService:
         eventos = self.evento_repository.get_all_para_ia()
         cliente = self.cliente_repository.get_by_id(id_clientes)
         reservas = self.reserva_repository.get_contexto_ia_by_cliente(id_clientes)
+        pagos = self.pago_repository.get_by_cliente(id_clientes)
 
         if cliente:
             cliente_texto = f"""
@@ -70,6 +72,16 @@ class IAService:
         else:
             reservas_texto = "No hay reservas registradas para este cliente."
 
+        if pagos:
+            pagos_texto = "\n".join(
+                f"- Pago #{p[0]} | Reserva #{p[1]} | Monto: S/ {p[2]} | "
+                f"Metodo: {p[3]} | Estado: {p[4]} | "
+                f"Total reserva: S/ {p[7]} | Estado reserva: {p[8]}"
+                for p in pagos
+            )
+        else:
+            pagos_texto = "No hay pagos registrados para este cliente."
+        
         eventos_texto = "\n".join(
         [
         f"- {evento[0]}: {evento[1]}"
@@ -94,6 +106,9 @@ Ayudar a los clientes a consultar información, solicitar cotizaciones y realiza
 
 CLIENTE REGISTRADO:
 {cliente_texto}
+
+PAGOS REGISTRADOS DEL CLIENTE:
+{pagos_texto}
 
 RESERVAS REGISTRADAS DEL CLIENTE:
 {reservas_texto}
@@ -179,6 +194,15 @@ Por ejemplo:
 - Si el cliente primero dijo que quería reservar.
 - Luego dice "será para 50 invitados".
 Debes entender que sigue hablando de la misma reserva.
+
+
+7. PAGOS
+Si el cliente menciona que ya pago, realizo un deposito, abono o transferencia:
+- Revisa los PAGOS REGISTRADOS DEL CLIENTE.
+- Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma al cliente que su pago fue recibido y su reserva esta confirmada.
+- Si hay un pago con estado 'pendiente', informa que el pago esta en espera de confirmacion del administrador.
+- Si no hay pagos registrados pero el insiste que pago, indica que un asesor verificara y lo confirmara pronto.
+- No inventes montos, estados ni fechas de pago. Usa solo los datos de PAGOS REGISTRADOS DEL CLIENTE.
 
 HISTORIAL DE LA CONVERSACIÓN:
 {historial_texto}

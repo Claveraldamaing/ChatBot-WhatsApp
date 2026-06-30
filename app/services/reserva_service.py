@@ -39,3 +39,19 @@ class ReservaService:
             "estado": reserva[5],
             "total_reserva": reserva[6],
         }
+    def finalizar_pago(self, reserva_id: int) -> bool:
+        from app.repositories.pago_repository import PagoRepository
+        reserva = self.repository.get_by_id(reserva_id)
+        if not reserva:
+            return False
+        monto_restante = reserva[6] / 2  # total_reserva / 2
+        pago_repo = PagoRepository()
+        pago_repo.create({
+            "idReservas": reserva_id,
+            "monto_pagado": monto_restante,
+            "metodo_pago": "Efectivo",
+            "estado": "pagado",
+            "referencia": f"Pago final reserva #{reserva_id}"
+        })
+        self.repository.update_estado(reserva_id, "completada")
+        return True

@@ -59,3 +59,13 @@ def delete_reserva(reserva_id: int):
             detail="Reserva no encontrada",
         )
     return MessageResponse(mensaje="Reserva eliminada correctamente")
+
+@router.post("/reservas/{reserva_id}/finalizar-pago", response_model=MessageResponse)
+def finalizar_pago(reserva_id: int):
+    result = service.finalizar_pago(reserva_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada",
+        )
+    return MessageResponse(mensaje="Pago final registrado, reserva completada")

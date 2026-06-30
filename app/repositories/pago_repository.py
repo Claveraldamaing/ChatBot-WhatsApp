@@ -90,3 +90,27 @@ class PagoRepository:
                     (pago_id,),
                 )
                 return cur.rowcount > 0
+            
+    def update_estado(self, pago_id: int, estado: str) -> bool:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE pagos SET estado = %s WHERE idPagos = %s",
+                    (estado, pago_id),
+                )
+                return cur.rowcount > 0    
+    def get_by_cliente(self, cliente_id: int):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT p.idPagos, p.idReservas, p.monto_pagado, p.metodo_pago,
+                        p.estado, p.fecha_pago, p.referencia,
+                        r.total_reserva, r.estado AS estado_reserva
+                    FROM pagos p
+                    JOIN reservas r ON r.idReservas = p.idReservas
+                    WHERE r.idClientes = %s
+                    ORDER BY p.fecha_pago DESC
+                """, (cliente_id,))
+                return cur.fetchall()
+            
+            

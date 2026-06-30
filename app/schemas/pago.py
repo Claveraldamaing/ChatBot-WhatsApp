@@ -24,3 +24,6 @@ class PagoResponse(PagoBase):
 
 class MessageResponse(BaseModel):
     mensaje: str
+
+class PagoUpdateEstado(BaseModel):
+    estado: str

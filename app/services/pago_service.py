@@ -39,3 +39,12 @@ class PagoService:
             "fecha_pago": pago[5],
             "referencia": pago[6],
         }
+    def confirmar_pago(self, pago_id: int) -> bool:
+        from app.repositories.reserva_repository import ReservaRepository
+        pago = self.repository.get_by_id(pago_id)
+        if not pago:
+            return False
+        self.repository.update_estado(pago_id, "pagado")
+        reserva_repo = ReservaRepository()
+        reserva_repo.update_estado(pago[1], "confirmada")
+        return True    

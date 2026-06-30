@@ -63,6 +63,16 @@
         }
         .exito { background: #d4edda; color: #155724; display: block; }
         .error { background: #f8d7da; color: #721c24; display: block; }
+        .datos-pago {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .datos-pago p { margin: 4px 0; }
+        .datos-pago strong { color: #856404; }
     </style>
 </head>
 <body>
@@ -88,6 +98,14 @@
             <div class="resumen" id="resumen">
                 <p><strong>Precio unitario:</strong> S/ <span id="precio">0.00</span></p>
                 <p><strong>Total estimado:</strong> S/ <span id="total">0.00</span></p>
+            </div>
+            <div class="datos-pago">
+                <p><strong>Datos para el pago:</strong></p>
+                <p>Yape: <strong>902091391</strong></p>
+                <p>BCP: <strong>123-456-789</strong></p>
+                <p>Titular: <strong>Juan Perez</strong></p>
+                <p><em>Abona el 50% (S/ <span id="adelanto">0.00</span>) para confirmar tu reserva.</em></p>
+                <p>El resto se paga el dia del evento.</p>
             </div>
             <button type="submit">Reservar</button>
         </form>
@@ -143,7 +161,9 @@
             const cantidad = parseInt(document.getElementById('cantidad').value) || 1;
             const precio = opt && opt.dataset.precio ? parseFloat(opt.dataset.precio) : 0;
             document.getElementById('precio').textContent = precio.toFixed(2);
-            document.getElementById('total').textContent = (precio * cantidad).toFixed(2);
+            const total = precio * cantidad;
+            document.getElementById('total').textContent = total.toFixed(2);
+            document.getElementById('adelanto').textContent = (total / 2).toFixed(2);
         }
         document.getElementById('formReserva').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -169,8 +189,12 @@
                         <strong>¡Reserva creada con éxito!</strong><br>
                         N° Reserva: ${result.idReserva}<br>
                         Total: S/ ${result.total}<br>
+                        Adelanto (50%): S/ ${(result.total / 2).toFixed(2)}<br>
                         Estado: ${result.estado}<br><br>
-                        Vuelve a WhatsApp para coordinar el pago.
+                        <strong>Realiza el pago del adelanto a:</strong><br>
+                        Yape: 902091301<br>
+                        BCP: 123-456-789<br><br>
+                        Luego vuelve a WhatsApp y escribe "ya pague".
                     `;
                     document.getElementById('formReserva').style.display = 'none';
                 } else {

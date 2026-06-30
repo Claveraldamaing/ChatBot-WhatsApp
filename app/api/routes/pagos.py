@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, status
  
-from app.schemas.pago import PagoCreate, PagoResponse, MessageResponse
+from app.schemas.pago import PagoCreate, PagoResponse, MessageResponse,PagoUpdateEstado
 from app.services.pago_service import PagoService
  
  
@@ -61,3 +61,12 @@ def delete_pago(pago_id: int):
         )
     return MessageResponse(mensaje="Pago eliminado correctamente")
  
+@router.put("/pagos/{pago_id}/confirmar", response_model=MessageResponse)
+def confirmar_pago(pago_id: int):
+    result = service.confirmar_pago(pago_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Pago no encontrado",
+        )
+    return MessageResponse(mensaje="Pago confirmado y reserva actualizada a confirmada")
