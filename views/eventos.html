@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Eventos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Gestión de eventos</h1>
+                <p>EVENTOS · PAQUETES · PAQUETES_EVENTOS</p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+        <div class="eb-content">
+
+            <!-- EVENTOS -->
+            <div class="eb-card">
+                <div class="eb-search-bar">
+                    <div style="flex:1">
+                        <div class="eb-card-title">Catálogo de eventos</div>
+                        <div class="eb-card-sub">EVENTOS JOIN PAQUETES_EVENTOS</div>
+                    </div>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalEvento()">+ Nuevo evento</button>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>idEventos</th><th>nombre</th><th>descripcion</th><th>estado</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tablaEventos">
+                            <tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAQUETES -->
+            <div class="eb-card">
+                <div class="eb-search-bar">
+                    <div style="flex:1">
+                        <div class="eb-card-title">Paquetes disponibles · PAQUETES</div>
+                    </div>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalPaquete()">+ Nuevo paquete</button>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>idPaquetes</th><th>nombre_paquete</th><th>descripcion</th><th>precio</th><th>estado</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tablaPaquetes">
+                            <tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL EVENTO -->
+<div class="eb-modal-overlay" id="modalEvento">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">📅 Nuevo evento</div>
+            <button class="eb-modal-close" onclick="cerrar('modalEvento')">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">Nombre del evento</label>
+                <input class="eb-input" id="ev-nombre" placeholder="Ej: Boda clásica">
+            </div>
+            <div class="eb-form-group">
+                <label class="eb-label">Descripción</label>
+                <textarea class="eb-input" id="ev-descripcion" rows="3" placeholder="Descripción..."></textarea>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrar('modalEvento')">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarEvento()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL PAQUETE -->
+<div class="eb-modal-overlay" id="modalPaquete">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">📦 Nuevo paquete</div>
+            <button class="eb-modal-close" onclick="cerrar('modalPaquete')">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">Nombre del paquete</label>
+                <input class="eb-input" id="pq-nombre" placeholder="Ej: Premium">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Precio (S/.)</label>
+                    <input class="eb-input" id="pq-precio" type="number" placeholder="22000">
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Descripción</label>
+                    <input class="eb-input" id="pq-descripcion" placeholder="Incluye...">
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrar('modalPaquete')">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarPaquete()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+
+    async function cargarEventos() {
+        try {
+            const res = await ApiEventos.listar();
+            const lista = res.data || res || [];
+            const tbody = document.getElementById("tablaEventos");
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin eventos</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = lista.map(e => `
+                <tr>
+                    <td><strong>#${String(e.idPaquetes || e.idEventos || e.id).padStart(3,"0")}</strong></td>
+                    <td style="font-weight:600">${e.nombre_paquete || e.nombre || "—"}</td>
+                    <td style="color:#475569;font-size:12px">${e.descripcion || "—"}</td>
+                    <td><span class="eb-badge ${e.estado==='Activo'?'eb-badge-success':'eb-badge-gray'}">${e.estado || "Activo"}</span></td>
+                    <td>
+                        <div style="display:flex;gap:6px">
+                            <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
+                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarEvento(${e.idEventos||e.id})">🗑</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        } catch {
+            document.getElementById("tablaEventos").innerHTML =
+                `<tr><td colspan="5" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    async function cargarPaquetes() {
+        try {
+            const res = await ApiPaquetes.listar();
+            const lista = res.data || res || [];
+            const tbody = document.getElementById("tablaPaquetes");
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin paquetes</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = lista.map(p => `
+                <tr>
+                    <td><strong>#P${String(p.idPaquetes||p.id).padStart(2,"0")}</strong></td>
+                    <td style="font-weight:600">${p.nombre_paquete || p.nombre}</td>
+                    <td style="color:#475569;font-size:12px">${p.descripcion || "—"}</td>
+                    <td style="font-weight:600;color:#16A34A">${formatMoney(p.precio)}</td>
+                    <td><span class="eb-badge eb-badge-success">${p.estado || "Activo"}</span></td>
+                    <td>
+                        <div style="display:flex;gap:6px">
+                            <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
+                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarPaquete(${p.idPaquetes||p.id})">🗑</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        } catch {
+            document.getElementById("tablaPaquetes").innerHTML =
+                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    function abrirModalEvento() { document.getElementById("modalEvento").classList.add("open"); }
+    function abrirModalPaquete() { document.getElementById("modalPaquete").classList.add("open"); }
+    function cerrar(id) { document.getElementById(id).classList.remove("open"); }
+
+    async function guardarEvento() {
+        const nombre = document.getElementById("ev-nombre").value.trim();
+        const descripcion = document.getElementById("ev-descripcion").value.trim();
+        if (!nombre) { showToast("⚠️ El nombre es requerido", "warning"); return; }
+        try {
+            await ApiEventos.crear({ nombre, descripcion, estado: "Activo" });
+            showToast("✅ Evento creado", "success");
+            cerrar("modalEvento");
+            cargarEventos();
+        } catch { showToast("❌ Error al guardar", "error"); }
+    }
+
+    async function guardarPaquete() {
+        const nombre_paquete = document.getElementById("pq-nombre").value.trim();
+        const precio = parseFloat(document.getElementById("pq-precio").value);
+        const descripcion = document.getElementById("pq-descripcion").value.trim();
+        if (!nombre_paquete || !precio) { showToast("⚠️ Nombre y precio requeridos", "warning"); return; }
+        try {
+            await ApiPaquetes.crear({ nombre_paquete, precio, descripcion, estado: "Activo" });
+            showToast("✅ Paquete creado", "success");
+            cerrar("modalPaquete");
+            cargarPaquetes();
+        } catch { showToast("❌ Error al guardar", "error"); }
+    }
+
+    async function eliminarEvento(id) {
+        if (!confirm("¿Eliminar este evento?")) return;
+        try {
+            await ApiEventos.eliminar(id);
+            showToast("✅ Evento eliminado", "success");
+            cargarEventos();
+        } catch { showToast("❌ Error al eliminar", "error"); }
+    }
+
+    async function eliminarPaquete(id) {
+        if (!confirm("¿Eliminar este paquete?")) return;
+        try {
+            await ApiPaquetes.eliminar(id);
+            showToast("✅ Paquete eliminado", "success");
+            cargarPaquetes();
+        } catch { showToast("❌ Error al eliminar", "error"); }
+    }
+
+    cargarEventos();
+    cargarPaquetes();
+</script>
+</body>
+</html>

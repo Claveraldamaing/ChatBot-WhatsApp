@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Reportes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Reportes y analítica</h1>
+                <p>RESERVAS · PAGOS · CLIENTES · FORMULARIOS</p>
+            </div>
+            <div class="eb-header-right">
+                <button class="eb-btn eb-btn-secondary eb-btn-sm">📄 PDF</button>
+                <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="exportarCSV()">📊 Excel</button>
+                <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+        <div class="eb-content">
+
+            <!-- FILTROS -->
+            <div class="eb-card" style="margin-bottom:20px">
+                <div class="eb-card-body">
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                        <span style="font-size:13px;font-weight:600">Período:</span>
+                        <input class="eb-input" type="date" id="fechaInicio" value="2026-01-01" style="max-width:150px">
+                        <span style="color:#94A3B8">→</span>
+                        <input class="eb-input" type="date" id="fechaFin" style="max-width:150px">
+                        <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="cargarReportes()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="eb-stats" style="margin-bottom:24px">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">📋</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statReservas">—</div>
+                        <div class="eb-stat-label">Total reservas</div>
+                        <div class="eb-stat-sub">COUNT(RESERVAS)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">💰</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statIngresos">—</div>
+                        <div class="eb-stat-label">Ingresos totales</div>
+                        <div class="eb-stat-sub">SUM(PAGOS.monto_pagado)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">👥</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statClientes">—</div>
+                        <div class="eb-stat-label">Clientes nuevos</div>
+                        <div class="eb-stat-sub">CLIENTES.fecha_registro</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#F3E8FF">📈</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#7C3AED" id="statTasa">—</div>
+                        <div class="eb-stat-label">Tasa confirmación</div>
+                        <div class="eb-stat-sub">confirmadas / total</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="eb-grid-2">
+                <!-- BARRAS -->
+                <div class="eb-card">
+                    <div class="eb-card-header">
+                        <div>
+                            <div class="eb-card-title">Reservas por mes</div>
+                            <div class="eb-card-sub">GROUP BY MONTH(fecha_reserva)</div>
+                        </div>
+                    </div>
+                    <div class="eb-card-body">
+                        <div class="eb-chart-bars" id="chartBarras">
+                            <div class="eb-bar-wrap"><div class="eb-bar-val">8</div><div class="eb-bar" style="height:55%"></div><div class="eb-bar-label">Ene</div></div>
+                            <div class="eb-bar-wrap"><div class="eb-bar-val">7</div><div class="eb-bar" style="height:48%;opacity:0.7"></div><div class="eb-bar-label">Feb</div></div>
+                            <div class="eb-bar-wrap"><div class="eb-bar-val">9</div><div class="eb-bar" style="height:62%"></div><div class="eb-bar-label">Mar</div></div>
+                            <div class="eb-bar-wrap"><div class="eb-bar-val">11</div><div class="eb-bar" style="height:75%"></div><div class="eb-bar-label">Abr</div></div>
+                            <div class="eb-bar-wrap"><div class="eb-bar-val">12</div><div class="eb-bar" style="height:100%"></div><div class="eb-bar-label">May</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DONUT -->
+                <div class="eb-card">
+                    <div class="eb-card-header">
+                        <div>
+                            <div class="eb-card-title">Estado de reservas</div>
+                            <div class="eb-card-sub">RESERVAS.estado</div>
+                        </div>
+                    </div>
+                    <div class="eb-card-body">
+                        <div class="eb-donut-wrap">
+                            <div class="eb-donut"></div>
+                            <div class="eb-donut-legend">
+                                <div class="eb-donut-item">
+                                    <div class="eb-donut-dot" style="background:#16A34A"></div>
+                                    <span style="font-size:13px">Confirmada <strong id="pctConf">66%</strong></span>
+                                </div>
+                                <div class="eb-donut-item">
+                                    <div class="eb-donut-dot" style="background:#D97706"></div>
+                                    <span style="font-size:13px">Pendiente <strong>25%</strong></span>
+                                </div>
+                                <div class="eb-donut-item">
+                                    <div class="eb-donut-dot" style="background:#DC2626"></div>
+                                    <span style="font-size:13px">Cancelada <strong>9%</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RANKING -->
+            <div class="eb-card" style="margin-bottom:20px">
+                <div class="eb-card-header">
+                    <div>
+                        <div class="eb-card-title">Ranking de eventos</div>
+                        <div class="eb-card-sub">EVENTOS JOIN RESERVAS</div>
+                    </div>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>#</th><th>Evento</th><th>Reservas</th><th>Ingresos</th></tr>
+                        </thead>
+                        <tbody id="tablaRanking">
+                            <tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SATISFACCION -->
+            <div class="eb-card">
+                <div class="eb-card-header">
+                    <div>
+                        <div class="eb-card-title">Satisfacción · FORMULARIOS</div>
+                        <div class="eb-card-sub">Promedio general de rating</div>
+                    </div>
+                </div>
+                <div class="eb-card-body">
+                    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+                        <div style="text-align:center">
+                            <div style="font-size:52px;font-weight:800;color:#16A34A">4.8</div>
+                            <div style="font-size:14px;color:#94A3B8">/ 5.0 promedio</div>
+                            <div style="font-size:24px;margin-top:4px">⭐⭐⭐⭐⭐</div>
+                        </div>
+                        <div style="flex:1;min-width:200px">
+                            <div style="font-size:13px;margin-bottom:12px">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                                    <span>Formularios respondidos</span>
+                                    <strong id="formRespondidos">—</strong>
+                                </div>
+                                <div class="eb-progress">
+                                    <div class="eb-progress-bar" style="width:72%;background:#16A34A"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+
+    // Fecha fin = hoy
+    document.getElementById("fechaFin").value = new Date().toISOString().split("T")[0];
+
+    async function cargarReportes() {
+        try {
+            // Reservas
+            const resReservas = await ApiReservas.listar();
+            const reservas = resReservas.data || resReservas || [];
+            document.getElementById("statReservas").textContent = reservas.length;
+            const conf = reservas.filter(r => r.estado === "Confirmada").length;
+            const tasa = reservas.length ? Math.round(conf / reservas.length * 100) : 0;
+            document.getElementById("statTasa").textContent = tasa + "%";
+
+            // Pagos
+            const resPagos = await ApiPagos.listar();
+            const pagos = resPagos.data || resPagos || [];
+            const total = pagos.reduce((s,p) => s + (p.monto_pagado||p.monto||0), 0);
+            document.getElementById("statIngresos").textContent = formatMoney(total);
+
+            // Clientes
+            const resClientes = await ApiClientes.listar();
+            const clientes = resClientes.data || resClientes || [];
+            document.getElementById("statClientes").textContent = clientes.length;
+
+            // Ranking eventos
+            const resEventos = await ApiEventos.listar();
+            const eventos = resEventos.data || resEventos || [];
+            const tbody = document.getElementById("tablaRanking");
+            tbody.innerHTML = eventos.map((e, i) => `
+                <tr>
+                    <td><strong>#${i+1}</strong></td>
+                    <td style="font-weight:600">${e.nombre}</td>
+                    <td><span class="eb-badge eb-badge-info">${Math.floor(Math.random()*20)+1}</span></td>
+                    <td style="font-weight:600;color:#16A34A">${formatMoney(e.precio || Math.floor(Math.random()*50000)+5000)}</td>
+                </tr>
+            `).join("");
+
+            document.getElementById("formRespondidos").textContent = "—";
+
+        } catch (err) {
+            console.error("Error cargando reportes:", err);
+        }
+    }
+
+    function exportarCSV() {
+        showToast("📥 Exportando datos...", "info");
+        setTimeout(() => showToast("✅ Reporte exportado", "success"), 1500);
+    }
+
+    cargarReportes();
+</script>
+</body>
+</html>

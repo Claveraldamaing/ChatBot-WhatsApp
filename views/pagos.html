@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Pagos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Pagos</h1>
+                <p>PAGOS · RESERVAS · CLIENTES</p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+        <div class="eb-content">
+
+            <!-- STATS -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">💰</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statTotal">—</div>
+                        <div class="eb-stat-label">Ingresos totales</div>
+                        <div class="eb-stat-sub">SUM(monto_pagado)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">✅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statPagados">—</div>
+                        <div class="eb-stat-label">Pagos completados</div>
+                        <div class="eb-stat-sub">estado = Pagado</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">⏳</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statParciales">—</div>
+                        <div class="eb-stat-label">Pagos parciales</div>
+                        <div class="eb-stat-sub">estado = Parcial</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA PAGOS -->
+            <div class="eb-card">
+                <div class="eb-search-bar">
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" id="buscador" placeholder="Referencia o método..." oninput="filtrar()">
+                    </div>
+                    <select class="eb-search" style="max-width:150px" id="filtroEstado" onchange="filtrar()">
+                        <option value="">Todos</option>
+                        <option>Pagado</option>
+                        <option>Parcial</option>
+                        <option>Pendiente</option>
+                    </select>
+                    <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo pago</button>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>idPagos</th><th>Reserva</th><th>monto_pagado</th><th>metodo_pago</th><th>fecha_pago</th><th>estado</th><th>referencia</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tablaPagos">
+                            <tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="eb-pagination">
+                    <div class="eb-page-btn active">1</div>
+                    <div class="eb-page-btn">2</div>
+                    <div class="eb-page-info" id="paginaInfo"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL NUEVO PAGO -->
+<div class="eb-modal-overlay" id="modalPago">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">💰 Nuevo pago</div>
+            <button class="eb-modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">ID Reserva <span>RESERVAS.idReservas</span></label>
+                <input class="eb-input" id="pago-reserva" type="number" placeholder="1024">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Monto pagado (S/.)</label>
+                    <input class="eb-input" id="pago-monto" type="number" placeholder="5000">
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Método de pago</label>
+                    <select class="eb-input" id="pago-metodo">
+                        <option>Transferencia</option>
+                        <option>Yape</option>
+                        <option>Plin</option>
+                        <option>Efectivo</option>
+                        <option>Tarjeta</option>
+                    </select>
+                </div>
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Estado</label>
+                    <select class="eb-input" id="pago-estado">
+                        <option>Pagado</option>
+                        <option>Parcial</option>
+                        <option>Pendiente</option>
+                    </select>
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Referencia</label>
+                    <input class="eb-input" id="pago-ref" placeholder="TRX-2026-0001">
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarPago()">Guardar pago</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+    let todosPagos = [];
+
+    async function cargarPagos() {
+        try {
+            const res = await ApiPagos.listar();
+            todosPagos = res.data || res || [];
+            const total = todosPagos.reduce((s,p) => s + (p.monto_pagado||p.monto||0), 0);
+            document.getElementById("statTotal").textContent = formatMoney(total);
+            document.getElementById("statPagados").textContent = todosPagos.filter(p => p.estado==="Pagado").length;
+            document.getElementById("statParciales").textContent = todosPagos.filter(p => p.estado==="Parcial").length;
+            document.getElementById("paginaInfo").textContent = `Mostrando ${todosPagos.length} pagos`;
+            renderTabla(todosPagos);
+        } catch {
+            document.getElementById("tablaPagos").innerHTML =
+                `<tr><td colspan="8" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    function renderTabla(lista) {
+        const tbody = document.getElementById("tablaPagos");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Sin pagos</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(p => `
+            <tr>
+                <td><strong>#P${String(p.idPagos||p.id).padStart(2,"0")}</strong></td>
+                <td><span class="eb-badge eb-badge-info">#${p.idReservas||p.reserva}</span></td>
+                <td style="font-weight:600;color:#16A34A">${formatMoney(p.monto_pagado||p.monto||0)}</td>
+                <td>${p.metodo_pago||p.metodo||"—"}</td>
+                <td style="color:#94A3B8;font-size:12px">${formatDate(p.fecha_pago||p.fecha)}</td>
+                <td>${badgeEstado(p.estado)}</td>
+                <td style="font-family:monospace;font-size:12px;color:#475569">${p.referencia||"—"}</td>
+                <td>
+                    <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="confirmarPago(${p.idPagos||p.id})">✅ Confirmar</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function filtrar() {
+        const q = document.getElementById("buscador").value.toLowerCase();
+        const estado = document.getElementById("filtroEstado").value;
+        let filtrados = todosPagos.filter(p =>
+            (p.referencia||"").toLowerCase().includes(q) ||
+            (p.metodo_pago||p.metodo||"").toLowerCase().includes(q)
+        );
+        if (estado) filtrados = filtrados.filter(p => p.estado === estado);
+        renderTabla(filtrados);
+    }
+
+    function badgeEstado(estado) {
+        const map = {
+            "Pagado":   `<span class="eb-badge eb-badge-success">Pagado</span>`,
+            "Parcial":  `<span class="eb-badge eb-badge-warning">Parcial</span>`,
+            "Pendiente":`<span class="eb-badge eb-badge-danger">Pendiente</span>`,
+        };
+        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+    }
+
+    function abrirModal() { document.getElementById("modalPago").classList.add("open"); }
+    function cerrarModal() { document.getElementById("modalPago").classList.remove("open"); }
+
+    async function guardarPago() {
+        const idReservas = parseInt(document.getElementById("pago-reserva").value);
+        const monto_pagado = parseFloat(document.getElementById("pago-monto").value);
+        const metodo_pago = document.getElementById("pago-metodo").value;
+        const estado = document.getElementById("pago-estado").value;
+        const referencia = document.getElementById("pago-ref").value;
+        if (!idReservas || !monto_pagado) { showToast("⚠️ Reserva y monto son requeridos", "warning"); return; }
+        try {
+            await ApiPagos.crear({ idReservas, monto_pagado, metodo_pago, estado, referencia });
+            showToast("✅ Pago registrado correctamente", "success");
+            cerrarModal();
+            cargarPagos();
+        } catch { showToast("❌ Error al guardar pago", "error"); }
+    }
+
+    async function confirmarPago(id) {
+        try {
+            await ApiPagos.actualizar(id, { estado: "Pagado" });
+            showToast("✅ Pago confirmado", "success");
+            cargarPagos();
+        } catch { showToast("❌ Error al confirmar", "error"); }
+    }
+
+    cargarPagos();
+</script>
+</body>
+</html>

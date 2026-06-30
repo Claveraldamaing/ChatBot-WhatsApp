@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Usuarios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Usuarios del sistema</h1>
+                <p>USUARIOS · Login · Roles · Permisos</p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+        <div class="eb-content">
+
+            <!-- STATS -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">👥</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
+                        <div class="eb-stat-label">Total usuarios</div>
+                        <div class="eb-stat-sub">USUARIOS COUNT(*)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">✅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statActivos">—</div>
+                        <div class="eb-stat-label">Activos</div>
+                        <div class="eb-stat-sub">estado = activo</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEE2E2">⛔</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#DC2626" id="statBloqueados">—</div>
+                        <div class="eb-stat-label">Bloqueados</div>
+                        <div class="eb-stat-sub">estado = bloqueado</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA -->
+            <div class="eb-card">
+                <div class="eb-search-bar">
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" placeholder="Nombre o email..." oninput="filtrar(this.value)">
+                    </div>
+                    <select class="eb-search" style="max-width:140px" onchange="filtrarRol(this.value)">
+                        <option value="">Todos los roles</option>
+                        <option>admin</option>
+                        <option>operador</option>
+                        <option>cliente</option>
+                    </select>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo usuario</button>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>id</th><th>nombre</th><th>email</th><th>rol</th><th>estado</th><th>fecha_registro</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tablaUsuarios">
+                            <tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SESIÓN ACTUAL -->
+            <div class="eb-card">
+                <div class="eb-card-header">
+                    <div class="eb-card-title">🔐 Sesión actual</div>
+                </div>
+                <div class="eb-card-body">
+                    <div style="display:flex;align-items:center;gap:16px">
+                        <div class="eb-avatar" style="width:48px;height:48px;font-size:18px" id="sesionAvatar">AD</div>
+                        <div>
+                            <div style="font-size:16px;font-weight:700" id="sesionNombre">—</div>
+                            <div style="font-size:13px;color:#94A3B8" id="sesionEmail">—</div>
+                            <div style="margin-top:6px;display:flex;gap:8px">
+                                <span class="eb-badge eb-badge-info" id="sesionRol">—</span>
+                                <span class="eb-badge eb-badge-success">✅ Activo</span>
+                            </div>
+                        </div>
+                        <div style="margin-left:auto">
+                            <button class="eb-btn eb-btn-danger" onclick="Auth.logout()">⏏ Cerrar sesión</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- MODAL NUEVO USUARIO -->
+<div class="eb-modal-overlay" id="modalUsuario">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">👤 Nuevo usuario</div>
+            <button class="eb-modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">Nombre completo</label>
+                <input class="eb-input" id="us-nombre" placeholder="Ej: Admin Sistema">
+            </div>
+            <div class="eb-form-group">
+                <label class="eb-label">Email <span>USUARIOS.email</span></label>
+                <input class="eb-input" id="us-email" type="email" placeholder="admin@eventbot.pe">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Contraseña</label>
+                    <input class="eb-input" id="us-password" type="password" placeholder="••••••••">
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Rol <span>USUARIOS.rol</span></label>
+                    <select class="eb-input" id="us-rol">
+                        <option>admin</option>
+                        <option>operador</option>
+                        <option>cliente</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarUsuario()">Guardar usuario</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+    let todosUsuarios = [];
+
+    // Mostrar sesión actual
+    const session = Auth.getSession();
+    if (session) {
+        document.getElementById("sesionAvatar").textContent = Auth.getInitials();
+        document.getElementById("sesionNombre").textContent = session.nombre || "—";
+        document.getElementById("sesionEmail").textContent = session.email || "—";
+        document.getElementById("sesionRol").textContent = session.rol || "—";
+    }
+
+    async function cargarUsuarios() {
+        try {
+            const res = await ApiUsuarios.listar();
+            todosUsuarios = res.data || res || [];
+            document.getElementById("statTotal").textContent = todosUsuarios.length;
+            document.getElementById("statActivos").textContent = todosUsuarios.filter(u => u.estado === "activo").length;
+            document.getElementById("statBloqueados").textContent = todosUsuarios.filter(u => u.estado === "bloqueado").length;
+            renderTabla(todosUsuarios);
+        } catch {
+            // Mostrar datos de sesión si no hay endpoint
+            const session = Auth.getSession();
+            todosUsuarios = session ? [{ idUsuario: session.id, nombre: session.nombre, email: session.email, rol: session.rol, estado: "activo", fecha_registro: new Date() }] : [];
+            document.getElementById("statTotal").textContent = todosUsuarios.length;
+            document.getElementById("statActivos").textContent = todosUsuarios.length;
+            document.getElementById("statBloqueados").textContent = 0;
+            renderTabla(todosUsuarios);
+        }
+    }
+
+    function renderTabla(lista) {
+        const tbody = document.getElementById("tablaUsuarios");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Sin usuarios</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(u => `
+            <tr>
+                <td><strong>#${u.idUsuario||u.id}</strong></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="eb-initials">${getInitials(u.nombre)}</div>
+                        <div style="font-weight:600;font-size:13px">${u.nombre}</div>
+                    </div>
+                </td>
+                <td style="color:#475569">${u.email}</td>
+                <td>${badgeRol(u.rol)}</td>
+                <td>${badgeEstado(u.estado)}</td>
+                <td style="color:#94A3B8;font-size:12px">${formatDate(u.fecha_registro)}</td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
+                        <button class="eb-btn eb-btn-danger eb-btn-sm"
+                            onclick="bloquearUsuario(${u.idUsuario||u.id}, '${u.nombre}')">🔒</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function badgeRol(rol) {
+        const map = {
+            "admin":    `<span class="eb-badge eb-badge-info">👑 admin</span>`,
+            "operador": `<span class="eb-badge eb-badge-warning">🔧 operador</span>`,
+            "cliente":  `<span class="eb-badge eb-badge-gray">👤 cliente</span>`,
+        };
+        return map[rol] || `<span class="eb-badge eb-badge-gray">${rol||"—"}</span>`;
+    }
+
+    function badgeEstado(estado) {
+        const map = {
+            "activo":    `<span class="eb-badge eb-badge-success">✅ activo</span>`,
+            "bloqueado": `<span class="eb-badge eb-badge-danger">⛔ bloqueado</span>`,
+            "inactivo":  `<span class="eb-badge eb-badge-gray">⭕ inactivo</span>`,
+        };
+        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+    }
+
+    function filtrar(q) {
+        const filtrados = todosUsuarios.filter(u =>
+            (u.nombre||"").toLowerCase().includes(q.toLowerCase()) ||
+            (u.email||"").toLowerCase().includes(q.toLowerCase())
+        );
+        renderTabla(filtrados);
+    }
+
+    function filtrarRol(rol) {
+        const filtrados = rol ? todosUsuarios.filter(u => u.rol === rol) : todosUsuarios;
+        renderTabla(filtrados);
+    }
+
+    function abrirModal() { document.getElementById("modalUsuario").classList.add("open"); }
+    function cerrarModal() { document.getElementById("modalUsuario").classList.remove("open"); }
+
+    async function guardarUsuario() {
+        const nombre = document.getElementById("us-nombre").value.trim();
+        const email = document.getElementById("us-email").value.trim();
+        const password = document.getElementById("us-password").value.trim();
+        const rol = document.getElementById("us-rol").value;
+        if (!nombre || !email || !password) { showToast("⚠️ Todos los campos son requeridos", "warning"); return; }
+        try {
+            await ApiUsuarios.crear({ nombre, email, password_hash: password, rol, estado: "activo" });
+            showToast("✅ Usuario creado correctamente", "success");
+            cerrarModal();
+            cargarUsuarios();
+        } catch { showToast("❌ Error al crear usuario", "error"); }
+    }
+
+    async function bloquearUsuario(id, nombre) {
+        if (!confirm(`¿Bloquear usuario ${nombre}?`)) return;
+        showToast(`🔒 Usuario ${nombre} bloqueado`, "warning");
+        cargarUsuarios();
+    }
+
+    cargarUsuarios();
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Clientes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Clientes</h1>
+                <p>CLIENTES · MENSAJES_IA · RESERVAS</p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline">
+                    <span class="dot"></span> Verificando...
+                </span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+
+        <div class="eb-content">
+
+            <div id="msgBox" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:500"></div>
+
+            <!-- STATS -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">👥</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
+                        <div class="eb-stat-label">Total clientes</div>
+                        <div class="eb-stat-sub">CLIENTES COUNT(*)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">📋</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statConReservas">—</div>
+                        <div class="eb-stat-label">Con reservas</div>
+                        <div class="eb-stat-sub">JOIN RESERVAS</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">💬</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statMensajes">—</div>
+                        <div class="eb-stat-label">Mensajes IA</div>
+                        <div class="eb-stat-sub">MENSAJES_IA</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA -->
+            <div class="eb-card">
+                <div class="eb-search-bar">
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" id="buscador" placeholder="Nombre o email..." oninput="filtrar()">
+                    </div>
+                    <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo cliente</button>
+                </div>
+
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr>
+                                <th>id</th>
+                                <th>nombre</th>
+                                <th>telefono</th>
+                                <th>email</th>
+                                <th>fecha_reg.</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaClientes">
+                            <tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="eb-pagination">
+                    <div class="eb-page-btn active">1</div>
+                    <div class="eb-page-btn">2</div>
+                    <div class="eb-page-btn">3</div>
+                    <div class="eb-page-info" id="paginaInfo"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL NUEVO CLIENTE -->
+<div class="eb-modal-overlay" id="modalNuevo">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">👤 Nuevo cliente</div>
+            <button class="eb-modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">Nombre completo</label>
+                <input class="eb-input" id="inp-nombre" placeholder="Ej: García López">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Teléfono</label>
+                    <input class="eb-input" id="inp-telefono" placeholder="+51 999 999 999">
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Email</label>
+                    <input class="eb-input" id="inp-email" type="email" placeholder="cliente@mail.pe">
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarCliente()">Guardar cliente</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+    let todosClientes = [];
+
+    async function cargarClientes() {
+        try {
+            const res = await ApiClientes.listar();
+            todosClientes = res.data || res || [];
+            document.getElementById("statTotal").textContent = todosClientes.length;
+            document.getElementById("statConReservas").textContent =
+                todosClientes.filter(c => c.total_reservas > 0).length || "—";
+            document.getElementById("statMensajes").textContent = "—";
+            document.getElementById("paginaInfo").textContent =
+                `Mostrando ${todosClientes.length} clientes`;
+            renderTabla(todosClientes);
+        } catch (err) {
+            document.getElementById("tablaClientes").innerHTML =
+                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    function renderTabla(lista) {
+        const tbody = document.getElementById("tablaClientes");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin clientes</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(c => `
+            <tr>
+                <td><strong>#${c.idClientes || c.id}</strong></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="eb-initials">${getInitials(c.nombre)}</div>
+                        <div style="font-weight:600;font-size:13px">${c.nombre}</div>
+                    </div>
+                </td>
+                <td style="color:#475569">${c.telefono || "—"}</td>
+                <td style="color:#475569">${c.email || "—"}</td>
+                <td style="color:#94A3B8;font-size:12px">${formatDate(c.fecha_registro)}</td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="verCliente(${c.idClientes || c.id})">👁 Ver</button>
+                        <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarCliente(${c.idClientes || c.id}, '${c.nombre}')">🗑</button>
+                    </div>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function filtrar() {
+        const q = document.getElementById("buscador").value.toLowerCase();
+        const filtrados = todosClientes.filter(c =>
+            (c.nombre || "").toLowerCase().includes(q) ||
+            (c.email || "").toLowerCase().includes(q)
+        );
+        renderTabla(filtrados);
+    }
+
+    function abrirModal() {
+        document.getElementById("modalNuevo").classList.add("open");
+    }
+    function cerrarModal() {
+        document.getElementById("modalNuevo").classList.remove("open");
+    }
+
+    async function guardarCliente() {
+        const nombre   = document.getElementById("inp-nombre").value.trim();
+        const telefono = document.getElementById("inp-telefono").value.trim();
+        const email    = document.getElementById("inp-email").value.trim();
+        if (!nombre) { showToast("⚠️ El nombre es requerido", "warning"); return; }
+        try {
+            await ApiClientes.crear({ nombre, telefono, email });
+            showToast("✅ Cliente guardado correctamente", "success");
+            cerrarModal();
+            cargarClientes();
+        } catch {
+            showToast("❌ Error al guardar cliente", "error");
+        }
+    }
+
+    async function eliminarCliente(id, nombre) {
+        if (!confirm(`¿Eliminar cliente ${nombre}?`)) return;
+        try {
+            await ApiClientes.eliminar(id);
+            showToast("✅ Cliente eliminado", "success");
+            cargarClientes();
+        } catch {
+            showToast("❌ Error al eliminar", "error");
+        }
+    }
+
+    function verCliente(id) {
+        showToast(`ℹ️ Ver detalle cliente #${id}`, "info");
+    }
+
+    cargarClientes();
+</script>
+</body>
+</html>

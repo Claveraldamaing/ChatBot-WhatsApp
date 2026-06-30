@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Dashboard — Panel general</h1>
+                <p id="fechaHoy"></p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline">
+                    <span class="dot"></span> Verificando...
+                </span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+
+        <div class="eb-content">
+
+            <!-- STATS -->
+            <div class="eb-stats">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">📅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statEventos">—</div>
+                        <div class="eb-stat-label">Total eventos</div>
+                        <div class="eb-stat-sub">EVENTOS COUNT(*)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">📋</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statReservas">—</div>
+                        <div class="eb-stat-label">Reservas activas</div>
+                        <div class="eb-stat-sub">RESERVAS.estado=conf.</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">👥</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statClientes">—</div>
+                        <div class="eb-stat-label">Clientes registrados</div>
+                        <div class="eb-stat-sub">CLIENTES COUNT(*)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#F3E8FF">💰</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#7C3AED" id="statIngresos">—</div>
+                        <div class="eb-stat-label">Ingresos del mes</div>
+                        <div class="eb-stat-sub">SUM(PAGOS.monto_pagado)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="eb-grid-2">
+                <!-- ÚLTIMAS RESERVAS -->
+                <div class="eb-card">
+                    <div class="eb-card-header">
+                        <div>
+                            <div class="eb-card-title">Últimas reservas</div>
+                            <div class="eb-card-sub">RESERVAS JOIN CLIENTES</div>
+                        </div>
+                        <a href="reservas.html" class="eb-btn eb-btn-secondary eb-btn-sm">Ver todas</a>
+                    </div>
+                    <div class="eb-table-wrap">
+                        <table class="eb-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>F. evento</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaReservas">
+                                <tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RECORDATORIOS -->
+                <div class="eb-card">
+                    <div class="eb-card-header">
+                        <div>
+                            <div class="eb-card-title">Recordatorios pendientes</div>
+                            <div class="eb-card-sub">RECORDATORIOS</div>
+                        </div>
+                        <a href="recordatorios.html" class="eb-btn eb-btn-secondary eb-btn-sm">Ver todos</a>
+                    </div>
+                    <div id="listaRecordatorios">
+                        <div style="padding:20px;text-align:center;color:#94A3B8">Cargando...</div>
+                    </div>
+                    <div style="padding:16px;border-top:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between">
+                        <div>
+                            <div style="font-size:13px;font-weight:600">Satisfacción media</div>
+                            <div style="font-size:11px;color:#94A3B8">FORMULARIOS.respuesta_json</div>
+                        </div>
+                        <div style="font-size:24px;font-weight:700;color:#16A34A">4.8/5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACCIONES RÁPIDAS -->
+            <div class="eb-card">
+                <div class="eb-card-header">
+                    <div class="eb-card-title">Acciones rápidas</div>
+                </div>
+                <div class="eb-card-body">
+                    <div class="eb-quick-actions">
+                        <a href="reservas.html" class="eb-quick-btn">
+                            <span>📋</span>Nueva reserva
+                        </a>
+                        <a href="clientes.html" class="eb-quick-btn">
+                            <span>👤</span>Nuevo cliente
+                        </a>
+                        <a href="eventos.html" class="eb-quick-btn">
+                            <span>📅</span>Nuevo evento
+                        </a>
+                        <a href="reportes.html" class="eb-quick-btn">
+                            <span>📊</span>Ver reportes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    // Verificar sesión
+    const session = Auth.require();
+
+    // Fecha actual
+    document.getElementById("fechaHoy").textContent =
+        "Bienvenido, " + Auth.getNombre() + " · " +
+        new Date().toLocaleDateString("es-PE", { weekday:"short", day:"numeric", month:"short", year:"numeric" });
+
+    // Cargar stats
+    async function cargarDashboard() {
+        try {
+            // Clientes
+            const clientes = await ApiClientes.listar();
+            document.getElementById("statClientes").textContent =
+                clientes.length || clientes.total || clientes.data?.length || "—";
+
+            // Eventos
+            const eventos = await ApiEventos.listar();
+            document.getElementById("statEventos").textContent =
+                eventos.length || eventos.total || eventos.data?.length || "—";
+
+            // Reservas
+            const reservas = await ApiReservas.listar();
+            const lista = reservas.data || reservas || [];
+            const confirmadas = lista.filter(r => r.estado === "Confirmada").length;
+            document.getElementById("statReservas").textContent = confirmadas;
+
+            // Tabla últimas reservas
+            const ultimas = lista.slice(0, 5);
+            const tbody = document.getElementById("tablaReservas");
+            if (ultimas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin reservas</td></tr>`;
+            } else {
+                tbody.innerHTML = ultimas.map(r => `
+                    <tr>
+                        <td><strong>#${r.idReservas || r.id}</strong></td>
+                        <td>${r.clienteNombre || r.nombre || "—"}</td>
+                        <td>${formatDate(r.fecha_evento)}</td>
+                        <td>${badgeEstado(r.estado)}</td>
+                        <td style="font-weight:600">${formatMoney(r.total_reserva || r.total || 0)}</td>
+                    </tr>
+                `).join("");
+            }
+
+            // Pagos
+            try {
+                const pagos = await ApiPagos.listar();
+                const pagosList = pagos.data || pagos || [];
+                const totalPagos = pagosList.reduce((s, p) => s + (p.monto_pagado || p.monto || 0), 0);
+                document.getElementById("statIngresos").textContent = formatMoney(totalPagos);
+            } catch {
+                document.getElementById("statIngresos").textContent = "—";
+            }
+
+        } catch (err) {
+            console.error("Error cargando dashboard:", err);
+        }
+
+        // Recordatorios
+        try {
+            const recs = await ApiRecordatorios.listar();
+            const lista = recs.data || recs || [];
+            const pendientes = lista.filter(r => r.estado === "pendiente").slice(0, 4);
+            const div = document.getElementById("listaRecordatorios");
+            if (pendientes.length === 0) {
+                div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios pendientes</div>`;
+            } else {
+                div.innerHTML = pendientes.map(r => `
+                    <div class="eb-reminder">
+                        <div class="eb-reminder-dot" style="background:#2563EB"></div>
+                        <div>
+                            <div class="eb-reminder-title">${r.tipo} · ${(r.mensaje||"").substring(0,40)}...</div>
+                            <div class="eb-reminder-sub">fecha_programada: ${formatDate(r.fecha_programada)} · estado: ${r.estado}</div>
+                        </div>
+                    </div>
+                `).join("");
+            }
+        } catch {
+            document.getElementById("listaRecordatorios").innerHTML =
+                `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios</div>`;
+        }
+    }
+
+    function badgeEstado(estado) {
+        const map = {
+            "Confirmada": `<span class="eb-badge eb-badge-success">Confirmada</span>`,
+            "Pendiente":  `<span class="eb-badge eb-badge-warning">Pendiente</span>`,
+            "Cancelada":  `<span class="eb-badge eb-badge-danger">Cancelada</span>`,
+        };
+        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado}</span>`;
+    }
+
+    cargarDashboard();
+</script>
+</body>
+</html>
