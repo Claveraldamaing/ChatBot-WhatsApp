@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body class="eb-login-body">
+
+<div class="eb-login-box">
+    <div class="eb-login-logo">
+        <h1>⚡ EventBot AI</h1>
+        <p>Sistema de gestión de eventos — Trujillo 2026</p>
+    </div>
+
+    <div class="eb-login-card">
+        <h2>Iniciar sesión</h2>
+        <p class="sub">Ingresa tus credenciales para continuar</p>
+
+        <div id="errorBox" class="eb-login-error-box" style="display:none">
+            <p id="errorMsg">❌ Credenciales incorrectas</p>
+            <span id="errorSub">Verifica tu email y contraseña</span>
+        </div>
+
+        <div class="eb-form-group">
+            <label class="eb-label">
+                Correo electrónico
+                <span>USUARIOS.email</span>
+            </label>
+            <div style="position:relative">
+                <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,12 2,6"/>
+                </svg>
+                <input class="eb-input" id="email" type="email"
+                    placeholder="usuario@eventbot.pe"
+                    style="padding-left:36px" required>
+            </div>
+        </div>
+
+        <div class="eb-form-group">
+            <label class="eb-label">
+                Contraseña
+                <span>USUARIOS.password_hash</span>
+            </label>
+            <div style="position:relative">
+                <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input class="eb-input" id="password" type="password"
+                    placeholder="••••••••"
+                    style="padding-left:36px" required>
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;cursor:pointer">
+                <input type="checkbox" id="recordar" style="width:15px;height:15px">
+                Recordar sesión
+            </label>
+            <a href="#" style="font-size:13px;color:#2563EB">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button id="btnLogin" class="eb-btn eb-btn-primary"
+            style="width:100%;justify-content:center;padding:11px;font-size:14px"
+            onclick="login()">
+            Ingresar al sistema →
+        </button>
+
+        <div style="margin-top:16px;padding:12px;background:#F8FAFC;border-radius:8px;font-size:12px;color:#64748B">
+            <strong>Demo:</strong> admin@eventbot.pe / admin123<br>
+            <strong>Roles:</strong> admin | operador | cliente
+        </div>
+    </div>
+
+    <div class="eb-login-footer">
+        EventBot AI · Grupo 04 · Trujillo 2026
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+    // Si ya está logueado, redirigir
+    const session = localStorage.getItem("eb_usuario");
+    if (session) window.location.href = "dashboard.html";
+
+    let intentos = 0;
+
+    async function login() {
+        const email    = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const btn      = document.getElementById("btnLogin");
+        const errorBox = document.getElementById("errorBox");
+
+        if (!email || !password) {
+            mostrarError("⚠️ Campos incompletos", "Por favor ingresa email y contraseña");
+            return;
+        }
+
+        btn.textContent = "Verificando...";
+        btn.disabled = true;
+
+        try {
+            const res = await ApiUsuarios.login({ email, password });
+
+            if (res && res.idUsuario) {
+                if (res.estado === "bloqueado") {
+                    mostrarError("⛔ Cuenta bloqueada", "Contacta al administrador del sistema");
+                    btn.textContent = "Ingresar al sistema →";
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Guardar sesión
+                localStorage.setItem("eb_usuario", JSON.stringify({
+                    id:     res.idUsuario,
+                    nombre: res.nombre,
+                    email:  res.email,
+                    rol:    res.rol
+                }));
+
+                window.location.href = "dashboard.html";
+            } else {
+                intentos++;
+                mostrarError(
+                    `❌ Credenciales incorrectas — Intento ${intentos}/3`,
+                    intentos >= 3 ? "Demasiados intentos. Contacta al admin." : "Verifica tu email y contraseña"
+                );
+                btn.textContent = "Ingresar al sistema →";
+                btn.disabled = false;
+            }
+        } catch {
+            // Si la API de usuarios no está lista, usar credenciales locales
+            if (email === "admin@eventbot.pe" && password === "admin123") {
+                localStorage.setItem("eb_usuario", JSON.stringify({
+                    id: 1, nombre: "Admin Sistema", email, rol: "admin"
+                }));
+                window.location.href = "dashboard.html";
+            } else {
+                intentos++;
+                mostrarError(
+                    `❌ Credenciales incorrectas — Intento ${intentos}/3`,
+                    "Verifica tu email y contraseña e intenta nuevamente"
+                );
+                btn.textContent = "Ingresar al sistema →";
+                btn.disabled = false;
+            }
+        }
+    }
+
+    function mostrarError(msg, sub) {
+        document.getElementById("errorMsg").textContent = msg;
+        document.getElementById("errorSub").textContent = sub;
+        document.getElementById("errorBox").style.display = "block";
+    }
+
+    // Enter para login
+    document.addEventListener("keydown", e => {
+        if (e.key === "Enter") login();
+    });
+</script>
+</body>
+</html>

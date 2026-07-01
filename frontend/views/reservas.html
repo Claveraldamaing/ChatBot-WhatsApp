@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventBot AI — Reservas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="../css/eventbot.css" rel="stylesheet">
+</head>
+<body>
+<div class="eb-layout">
+    <div id="sidebar"></div>
+    <main class="eb-main">
+        <header class="eb-header">
+            <div class="eb-header-title">
+                <h1>Gestión de reservas</h1>
+                <p>RESERVAS · DETALLE_RESERVA · PAGOS · RECORDATORIOS</p>
+            </div>
+            <div class="eb-header-right">
+                <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
+                <div class="eb-avatar" id="headerAvatar">AD</div>
+            </div>
+        </header>
+        <div class="eb-content">
+
+            <!-- STATS -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">📋</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
+                        <div class="eb-stat-label">Total reservas</div>
+                        <div class="eb-stat-sub">RESERVAS COUNT(*)</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">✅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statConf">—</div>
+                        <div class="eb-stat-label">Confirmadas</div>
+                        <div class="eb-stat-sub">estado = confirmada</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">⏳</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statPend">—</div>
+                        <div class="eb-stat-label">Pendientes</div>
+                        <div class="eb-stat-sub">estado = pendiente</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLA RESERVAS -->
+            <div class="eb-card" style="margin-bottom:20px">
+                <div class="eb-search-bar">
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" id="buscador" placeholder="Cliente..." oninput="filtrar()">
+                    </div>
+                    <select class="eb-search" style="max-width:150px" id="filtroEstado" onchange="filtrar()">
+                        <option value="">Todos estados</option>
+                        <option>Confirmada</option>
+                        <option>Pendiente</option>
+                        <option>Cancelada</option>
+                    </select>
+                    <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
+                    <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nueva reserva</button>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>id</th><th>Cliente</th><th>fecha_reserva</th><th>fecha_evento</th><th>hora</th><th>estado</th><th>total</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tablaReservas">
+                            <tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="eb-pagination">
+                    <div class="eb-page-btn active">1</div>
+                    <div class="eb-page-btn">2</div>
+                    <div class="eb-page-btn">3</div>
+                    <div class="eb-page-info" id="paginaInfo"></div>
+                </div>
+            </div>
+
+            <!-- PAGOS -->
+            <div class="eb-card">
+                <div class="eb-card-header">
+                    <div>
+                        <div class="eb-card-title">Detalle de pagos · PAGOS</div>
+                        <div class="eb-card-sub">PAGOS JOIN RESERVAS</div>
+                    </div>
+                </div>
+                <div class="eb-table-wrap">
+                    <table class="eb-table">
+                        <thead>
+                            <tr><th>idPagos</th><th>Reserva</th><th>monto_pagado</th><th>metodo_pago</th><th>fecha_pago</th><th>estado</th><th>referencia</th></tr>
+                        </thead>
+                        <tbody id="tablaPagos">
+                            <tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL NUEVA RESERVA -->
+<div class="eb-modal-overlay" id="modalReserva">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">📋 Nueva reserva</div>
+            <button class="eb-modal-close" onclick="cerrarModal()">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <div class="eb-form-group">
+                <label class="eb-label">ID Cliente <span>CLIENTES.idClientes</span></label>
+                <input class="eb-input" id="res-cliente" type="number" placeholder="1">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Fecha del evento</label>
+                    <input class="eb-input" id="res-fecha-evento" type="date">
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Hora</label>
+                    <input class="eb-input" id="res-hora" type="time" value="19:00">
+                </div>
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Estado</label>
+                    <select class="eb-input" id="res-estado">
+                        <option>Pendiente</option>
+                        <option>Confirmada</option>
+                        <option>Cancelada</option>
+                    </select>
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Total (S/.)</label>
+                    <input class="eb-input" id="res-total" type="number" placeholder="0">
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="cerrarModal()">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="guardarReserva()">Guardar reserva</button>
+        </div>
+    </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/sidebar.js"></script>
+<script>
+    Auth.require();
+    let todasReservas = [];
+
+    async function cargarReservas() {
+        try {
+            const res = await ApiReservas.listar();
+            todasReservas = res.data || res || [];
+            document.getElementById("statTotal").textContent = todasReservas.length;
+            document.getElementById("statConf").textContent = todasReservas.filter(r => r.estado === "Confirmada").length;
+            document.getElementById("statPend").textContent = todasReservas.filter(r => r.estado === "Pendiente").length;
+            document.getElementById("paginaInfo").textContent = `Mostrando ${todasReservas.length} reservas`;
+            renderTabla(todasReservas);
+        } catch {
+            document.getElementById("tablaReservas").innerHTML =
+                `<tr><td colspan="8" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    async function cargarPagos() {
+        try {
+            const res = await ApiPagos.listar();
+            const lista = res.data || res || [];
+            const tbody = document.getElementById("tablaPagos");
+            if (!lista.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Sin pagos</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = lista.map(p => `
+                <tr>
+                    <td><strong>#P${String(p.idPagos||p.id).padStart(2,"0")}</strong></td>
+                    <td><span class="eb-badge eb-badge-info">#${p.idReservas||p.reserva}</span></td>
+                    <td style="font-weight:600;color:#16A34A">${formatMoney(p.monto_pagado||p.monto)}</td>
+                    <td>${p.metodo_pago||p.metodo||"—"}</td>
+                    <td style="color:#94A3B8;font-size:12px">${formatDate(p.fecha_pago||p.fecha)}</td>
+                    <td>${p.estado==="Pagado"
+                        ? `<span class="eb-badge eb-badge-success">Pagado</span>`
+                        : `<span class="eb-badge eb-badge-warning">${p.estado}</span>`}</td>
+                    <td style="font-family:monospace;font-size:12px;color:#475569">${p.referencia||"—"}</td>
+                </tr>
+            `).join("");
+        } catch {
+            document.getElementById("tablaPagos").innerHTML =
+                `<tr><td colspan="7" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+        }
+    }
+
+    function renderTabla(lista) {
+        const tbody = document.getElementById("tablaReservas");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Sin reservas</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(r => `
+            <tr>
+                <td><strong>#${r.idReservas||r.id}</strong></td>
+                <td>${r.clienteNombre||r.nombre||r.idClientes||"—"}</td>
+                <td style="color:#94A3B8;font-size:12px">${formatDate(r.fecha_reserva)}</td>
+                <td style="font-weight:600">${formatDate(r.fecha_evento)}</td>
+                <td style="color:#475569">${r.hora_evento||r.hora||"—"}</td>
+                <td>${badgeEstado(r.estado)}</td>
+                <td style="font-weight:600">${formatMoney(r.total_reserva||r.total||0)}</td>
+                <td><button class="eb-btn eb-btn-secondary eb-btn-sm">👁 Ver</button></td>
+            </tr>
+        `).join("");
+    }
+
+    function filtrar() {
+        const q = document.getElementById("buscador").value.toLowerCase();
+        const estado = document.getElementById("filtroEstado").value;
+        let filtrados = todasReservas.filter(r =>
+            (r.clienteNombre||r.nombre||"").toLowerCase().includes(q)
+        );
+        if (estado) filtrados = filtrados.filter(r => r.estado === estado);
+        renderTabla(filtrados);
+    }
+
+    function badgeEstado(estado) {
+        const map = {
+            "Confirmada": `<span class="eb-badge eb-badge-success">Confirmada</span>`,
+            "Pendiente":  `<span class="eb-badge eb-badge-warning">Pendiente</span>`,
+            "Cancelada":  `<span class="eb-badge eb-badge-danger">Cancelada</span>`,
+        };
+        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+    }
+
+    function abrirModal() { document.getElementById("modalReserva").classList.add("open"); }
+    function cerrarModal() { document.getElementById("modalReserva").classList.remove("open"); }
+
+    async function guardarReserva() {
+        const idClientes = parseInt(document.getElementById("res-cliente").value);
+        const fecha_evento = document.getElementById("res-fecha-evento").value;
+        const hora_evento = document.getElementById("res-hora").value;
+        const estado = document.getElementById("res-estado").value;
+        const total_reserva = parseFloat(document.getElementById("res-total").value) || 0;
+        if (!idClientes || !fecha_evento) { showToast("⚠️ Cliente y fecha son requeridos", "warning"); return; }
+        try {
+            await ApiReservas.crear({ idClientes, fecha_evento, hora_evento, estado, total_reserva });
+            showToast("✅ Reserva creada correctamente", "success");
+            cerrarModal();
+            cargarReservas();
+        } catch { showToast("❌ Error al guardar reserva", "error"); }
+    }
+
+    cargarReservas();
+    cargarPagos();
+</script>
+</body>
+</html>
