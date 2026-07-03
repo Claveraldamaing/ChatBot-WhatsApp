@@ -1,34 +1,25 @@
 from app.repositories.reserva_repository import ReservaRepository
 from app.schemas.reserva import ReservaCreate, ReservaResponse
-
-
 class ReservaService:
     def __init__(self):
         self.repository = ReservaRepository()
-
     def list_reservas(self) -> list[ReservaResponse]:
         reservas = self.repository.get_all()
         return [ReservaResponse(**self._normalize(r)) for r in reservas]
-
     def get_reserva(self, reserva_id: int) -> ReservaResponse | None:
         reserva = self.repository.get_by_id(reserva_id)
         if reserva is None:
             return None
         return ReservaResponse(**self._normalize(reserva))
-
     def list_by_cliente(self, cliente_id: int) -> list[ReservaResponse]:
         reservas = self.repository.get_by_cliente(cliente_id)
         return [ReservaResponse(**self._normalize(r)) for r in reservas]
-
     def create_reserva(self, data: ReservaCreate) -> int:
         return self.repository.create(data.model_dump())
-
     def update_reserva(self, reserva_id: int, data: ReservaCreate) -> bool:
         return self.repository.update(reserva_id, data.model_dump())
-
     def delete_reserva(self, reserva_id: int) -> bool:
         return self.repository.delete(reserva_id)
-
     def _normalize(self, reserva: tuple) -> dict:
         return {
             "id": reserva[0],
@@ -44,8 +35,16 @@ class ReservaService:
         reserva = self.repository.get_by_id(reserva_id)
         if not reserva:
             return False
-        monto_restante = reserva[6] / 2  # total_reserva / 2
+        if reserva[5] == "completada":
+            return True
+        if reserva[5] != "confirmada":
+            return False
         pago_repo = PagoRepository()
+        pagos_existentes = pago_repo.get_by_reserva(reserva_id)
+        tiene_adelanto = any(p[4] == "pagado" for p in pagos_existentes)
+        if not tiene_adelanto:
+            return False
+        monto_restante = reserva[6] / 2
         pago_repo.create({
             "idReservas": reserva_id,
             "monto_pagado": monto_restante,

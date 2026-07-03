@@ -1,5 +1,4 @@
 from openai import OpenAI
-
 from app.core.config import settings
 from app.repositories.mensajes_ia_repository import MensajesIARepository
 from app.repositories.paquete_repository import PaqueteRepository
@@ -7,14 +6,10 @@ from app.repositories.evento_repository import EventoRepository
 from app.repositories.cliente_repository import ClienteRepository
 from app.repositories.reserva_repository import ReservaRepository
 from app.repositories.pago_repository import PagoRepository
-
 client = OpenAI(
     api_key=settings.openai_api_key
 )
-
-
 class IAService:
-
     def __init__(self):
         self.mensajes_repository = MensajesIARepository()
         self.paquete_repository = PaqueteRepository()
@@ -22,18 +17,12 @@ class IAService:
         self.cliente_repository = ClienteRepository()
         self.reserva_repository = ReservaRepository()
         self.pago_repository = PagoRepository()
-        
     def responder(self, texto: str, id_clientes: int) -> str:
-
-        # Obtener historial anterior desde PostgreSQL
         historial = self.mensajes_repository.get_by_cliente(id_clientes, limit=8)
-
-        # Como viene ordenado DESC, lo invertimos para leerlo en orden cronológico
         historial = list(reversed(historial))
-
         historial_texto = "\n".join(
             [
-                f"{mensaje[0]}: {mensaje[1]}"
+                f"{mensaje[2]}: {mensaje[3]}"
                 for mensaje in historial
             ]
         )
@@ -42,7 +31,6 @@ class IAService:
         cliente = self.cliente_repository.get_by_id(id_clientes)
         reservas = self.reserva_repository.get_contexto_ia_by_cliente(id_clientes)
         pagos = self.pago_repository.get_by_cliente(id_clientes)
-
         if cliente:
             cliente_texto = f"""
 - ID: {cliente[0]}
@@ -52,7 +40,6 @@ class IAService:
 """
         else:
             cliente_texto = "No se encontro informacion del cliente registrado."
-
         if reservas:
             reservas_texto = "\n".join(
                 [
@@ -71,7 +58,6 @@ class IAService:
             )
         else:
             reservas_texto = "No hay reservas registradas para este cliente."
-
         if pagos:
             pagos_texto = "\n".join(
                 f"- Pago #{p[0]} | Reserva #{p[1]} | Monto: S/ {p[2]} | "
@@ -81,44 +67,37 @@ class IAService:
             )
         else:
             pagos_texto = "No hay pagos registrados para este cliente."
-        
         eventos_texto = "\n".join(
         [
         f"- {evento[0]}: {evento[1]}"
         for evento in eventos
         ]
         )
-
         paquetes_texto = "\n".join(
          [
         f"- {paquete[0]}: {paquete[1]} | Precio: S/ {paquete[2]} | Estado: {paquete[3]}"
         for paquete in paquetes
          ]
          )
-
-        respuesta = client.responses.create(
+        respuesta = client.chat.completions.create(
             model="gpt-4o-mini",
-            input=f"""
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""
 Eres un chatbot inteligente especializado en la atención y gestión de eventos en Trujillo.
-
 OBJETIVO:
 Ayudar a los clientes a consultar información, solicitar cotizaciones y realizar reservas de eventos mediante WhatsApp.
-
 CLIENTE REGISTRADO:
 {cliente_texto}
-
 PAGOS REGISTRADOS DEL CLIENTE:
 {pagos_texto}
-
 RESERVAS REGISTRADAS DEL CLIENTE:
 {reservas_texto}
-
 EVENTOS DISPONIBLES EN BASE DE DATOS:
 {eventos_texto}
-
 PAQUETES DISPONIBLES EN BASE DE DATOS:
 {paquetes_texto}
-
 COMPORTAMIENTO:
 - Responde de forma amable, profesional y breve.
 - Mantén un tono cordial y orientado al cliente.
@@ -129,7 +108,6 @@ COMPORTAMIENTO:
 - Siempre busca ayudar al cliente a continuar con el proceso de reserva.
 - Usa el historial de conversación para no repetir preguntas que el cliente ya respondió.
 - Si el cliente ya indicó un dato, recuérdalo y continúa solicitando solo los datos faltantes.
-
 - Este cliente ya esta registrado en la base de datos.
 - No envies el Formulario de Cliente ni FORM_CLIENTE_URL a clientes registrados.
 - Si el nombre del cliente esta disponible, saludalo por su nombre de forma natural.
@@ -140,81 +118,27 @@ COMPORTAMIENTO:
 - Si hay reservas registradas, responde sobre reservas usando solo los datos de RESERVAS REGISTRADAS DEL CLIENTE.
 - No inventes fechas, paquetes, eventos ni estados de reserva.
 - Si una reserva no tiene detalle, paquete o evento, indica que ese dato no esta registrado.
-
 REGLAS IMPORTANTES:
-
-1. CONSULTAS GENERALES
-
-Si el cliente solicita informacion general, paquetes, servicios o desea conocer mas sobre la empresa, responde la consulta usando la informacion disponible. No envies el formulario de registro porque este cliente ya esta registrado.
-
-2. RESERVAS
-
-Si el cliente menciona palabras como:
-- reservar
-- contratar
-- separar fecha
-- cotizar
-- agendar
-- disponibilidad
-- evento
-- cumpleaños
-- show infantil
-
-No solicites datos del evento (fecha, tipo, invitados, ubicación).
-El formulario de reserva ya los solicita.
-Comparte inmediatamente el enlace del formulario de reserva.
-
+1. CONSULTAS GENERALES: Si el cliente solicita informacion general, paquetes, servicios o desea conocer mas sobre la empresa, responde la consulta usando la informacion disponible. No envies el formulario de registro porque este cliente ya esta registrado.
+2. RESERVAS: Si el cliente menciona palabras como: reservar, contratar, separar fecha, cotizar, agendar, disponibilidad, evento, cumpleaños, show infantil. No solicites datos del evento. Comparte inmediatamente el enlace del formulario de reserva.
 Formulario de Reserva:
-{settings.ngrok_url}/formulario/reserva?telefono={cliente[2]}
-
-3. COTIZACIONES
-
-Si el cliente solicita precios o cotizaciones:
-- No inventes montos.
-- Explica que la cotización depende de la fecha, ubicación, duración, tipo de evento y cantidad de invitados.
-- Solicita la información necesaria.
-- Comparte el formulario de reserva.
-
-4. DISPONIBILIDAD
-
-Si preguntan por disponibilidad:
-- Indica que se debe validar la fecha.
-- Solicita la fecha del evento si aún no la indicó.
-- Comparte el formulario de reserva.
-
-5. FORMULARIOS
-
-Siempre que compartas un formulario, muestra el enlace completo para que el cliente pueda acceder directamente.
-
-6. USO DEL HISTORIAL
-
-El historial muestra los mensajes anteriores de este cliente.
-Debes usarlo para entender el contexto.
-Por ejemplo:
-- Si el cliente primero dijo que quería reservar.
-- Luego dice "será para 50 invitados".
-Debes entender que sigue hablando de la misma reserva.
-
-
-7. PAGOS
-Si el cliente menciona que ya pago, realizo un deposito, abono o transferencia:
-- Revisa los PAGOS REGISTRADOS DEL CLIENTE.
-- Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma al cliente que su pago fue recibido y su reserva esta confirmada.
-- Si hay un pago con estado 'pendiente', informa que el pago esta en espera de confirmacion del administrador.
-- Si no hay pagos registrados pero el insiste que pago, indica que un asesor verificara y lo confirmara pronto.
-- No inventes montos, estados ni fechas de pago. Usa solo los datos de PAGOS REGISTRADOS DEL CLIENTE.
-
+{settings.ngrok_url}/formulario/reserva?telefono={cliente[2] if cliente else 'pendiente'}
+3. COTIZACIONES: Si el cliente solicita precios o cotizaciones: No inventes montos. Explica que la cotización depende de la fecha, ubicación, duración, tipo de evento y cantidad de invitados. Solicita la información necesaria. Comparte el formulario de reserva.
+4. DISPONIBILIDAD: Si preguntan por disponibilidad: Indica que se debe validar la fecha. Solicita la fecha del evento si aún no la indicó. Comparte el formulario de reserva.
+5. FORMULARIOS: Siempre que compartas un formulario, muestra el enlace completo para que el cliente pueda acceder directamente.
+6. USO DEL HISTORIAL: El historial muestra los mensajes anteriores de este cliente. Debes usarlo para entender el contexto.
+7. PAGOS: Si el cliente menciona que ya pago: Revisa los PAGOS REGISTRADOS DEL CLIENTE. Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma al cliente. Si hay un pago con estado 'pendiente', informa que esta en espera de confirmacion. Si no hay pagos registrados, indica que un asesor verificara.
 HISTORIAL DE LA CONVERSACIÓN:
 {historial_texto}
-
-NUEVO MENSAJE DEL CLIENTE:
-{texto}
-"""
+""",
+                },
+                {
+                    "role": "user",
+                    "content": texto,
+                },
+            ],
         )
-
-        respuesta_texto = respuesta.output_text
-
-        # Guardar mensaje del cliente en PostgreSQL
+        respuesta_texto = respuesta.choices[0].message.content
         self.mensajes_repository.create({
             "idClientes": id_clientes,
             "rol": "cliente",
@@ -223,8 +147,6 @@ NUEVO MENSAJE DEL CLIENTE:
             "estado": "activo",
             "tiene_reserva": False
         })
-
-        # Guardar respuesta de la IA en PostgreSQL
         self.mensajes_repository.create({
             "idClientes": id_clientes,
             "rol": "asistente",
@@ -233,5 +155,4 @@ NUEVO MENSAJE DEL CLIENTE:
             "estado": "activo",
             "tiene_reserva": False
         })
-
         return respuesta_texto

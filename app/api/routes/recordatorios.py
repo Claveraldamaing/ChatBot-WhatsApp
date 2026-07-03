@@ -6,6 +6,30 @@ service = RecordatorioService()
 @router.get("/recordatorios", response_model=list[RecordatorioResponse])
 def list_recordatorios():
     return service.list_recordatorios()
+@router.get("/recordatorios/pendientes-para-enviar")
+def pendientes_para_enviar():
+    pendientes = service.repository.get_pendientes()
+    resultado = []
+    for r in pendientes:
+        from app.repositories.reserva_repository import ReservaRepository
+        from app.repositories.cliente_repository import ClienteRepository
+        reserva_repo = ReservaRepository()
+        cliente_repo = ClienteRepository()
+        reserva = reserva_repo.get_by_id(r[1])
+        if not reserva:
+            continue
+        cliente = cliente_repo.get_by_id(reserva[1])
+        if not cliente:
+            continue
+        resultado.append({
+            "id": r[0],
+            "idReserva": r[1],
+            "tipo": r[2],
+            "mensaje": r[3],
+            "telefono": cliente[2],
+            "fecha_programada": str(r[4]),
+        })
+    return resultado
 @router.get("/recordatorios/{recordatorio_id}", response_model=RecordatorioResponse)
 def get_recordatorio(recordatorio_id: int):
     item = service.get_recordatorio(recordatorio_id)
@@ -57,3 +81,4 @@ def generar_recordatorios(reserva_id: int):
             detail="Reserva no encontrada",
         )
     return MessageResponse(mensaje="Recordatorios generados correctamente para la reserva")
+

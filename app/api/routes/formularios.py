@@ -6,9 +6,8 @@ from datetime import date
 from app.repositories.cliente_repository import ClienteRepository
 from app.repositories.paquete_evento_repository import PaqueteEventoRepository
 from app.repositories.paquete_repository import PaqueteRepository
-from app.services.reserva_service import ReservaService
 from app.schemas.reserva import ReservaCreate
-
+from app.core.database import get_connection
 router = APIRouter(tags=["formularios"])
 class FormularioReservaRequest(BaseModel):
     telefono: str
@@ -16,25 +15,21 @@ class FormularioReservaRequest(BaseModel):
     hora_evento: str
     idPaquetesEventos: int
     cantidad: int = 1
-
 @router.get("/formulario/cliente", response_class=HTMLResponse)
 async def formulario_cliente(telefono: str):
     html_path = Path(__file__).parent.parent.parent / "templates" / "formulario_clientes.html"
     html = html_path.read_text(encoding="utf-8")
     return html
-
 @router.get("/formulario/reserva", response_class=HTMLResponse)
 async def formulario_reserva(telefono: str):
     html_path = Path(__file__).parent.parent.parent / "templates" / "formulario_reserva.html"
     html = html_path.read_text(encoding="utf-8")
     return html
-
 @router.post("/formulario/reserva")
 async def crear_reserva(data: FormularioReservaRequest):
     cliente_repo = ClienteRepository()
     pe_repo = PaqueteEventoRepository()
     paquete_repo = PaqueteRepository()
-    reserva_service = ReservaService()
     cliente = cliente_repo.get_by_telefono(data.telefono)
     if not cliente:
         return JSONResponse(status_code=404, content={"error": "Cliente no encontrado"})
@@ -49,17 +44,17 @@ async def crear_reserva(data: FormularioReservaRequest):
     precio = paquete[3]
     subtotal = round(float(precio) * data.cantidad, 2)
     total = subtotal
-    reserva_data = ReservaCreate(
-        idClientes=id_clientes,
-        fecha_evento=data.fecha_evento,
-        hora_evento=data.hora_evento,
-        estado="pendiente",
-        total_reserva=total,
-    )
-    id_reserva = reserva_service.create_reserva(reserva_data)
-    from app.core.database import get_connection
     with get_connection() as conn:
         with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO reservas (idClientes, fecha_evento, hora_evento, estado, total_reserva)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING idReservas
+                """,
+                (id_clientes, data.fecha_evento, data.hora_evento, "pendiente", total),
+            )
+            id_reserva = cur.fetchone()[0]
             cur.execute(
                 """
                 INSERT INTO detalle_reserva (idReservas, idPaquetesEventos, cantidad, precio_unitario, subtotal)
@@ -67,9 +62,19 @@ async def crear_reserva(data: FormularioReservaRequest):
                 """,
                 (id_reserva, data.idPaquetesEventos, data.cantidad, precio, subtotal),
             )
+            adelanto = round(total / 2, 2)
+            cur.execute(
+                """
+                INSERT INTO pagos (idReservas, monto_pagado, metodo_pago, estado, referencia)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (id_reserva, adelanto, "Pendiente", "pendiente", f"Adelanto 50% reserva #{id_reserva}"),
+            )
+            conn.commit()
     return {
         "mensaje": "Reserva registrada correctamente",
         "idReserva": id_reserva,
         "total": total,
+        "adelanto": adelanto,
         "estado": "pendiente"
     }

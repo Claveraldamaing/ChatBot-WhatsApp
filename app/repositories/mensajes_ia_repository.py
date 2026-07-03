@@ -7,7 +7,7 @@ class MensajesIARepository:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT rol, contenido, fecha_hora_mensaje
+                    SELECT idMensajes_ia, idClientes, rol, contenido, tipo, fecha_hora_mensaje, estado, tiene_reserva
                     FROM mensajes_ia
                     WHERE idClientes = %s
                     ORDER BY fecha_hora_mensaje DESC
@@ -41,3 +41,25 @@ class MensajesIARepository:
                         data.get("tiene_reserva", False),
                     ),
                 )
+
+    def get_by_id(self, mensaje_id: int):
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT idMensajes_ia, idClientes, rol, contenido, tipo,
+                        fecha_hora_mensaje, estado, tiene_reserva
+                    FROM mensajes_ia
+                    WHERE idMensajes_ia = %s
+                    """,
+                    (mensaje_id,),
+                )
+                return cur.fetchone()
+    def delete(self, mensaje_id: int) -> bool:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM mensajes_ia WHERE idMensajes_ia = %s",
+                    (mensaje_id,),
+                )
+                return cur.rowcount > 0

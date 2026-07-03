@@ -11,6 +11,9 @@ from app.api.routes.pagos import router as pagos_router
 from app.api.routes.whatsapp import router as whatsapp_router
 from app.api.routes.formularios import router as formularios_router
 from app.api.routes.recordatorios import router as recordatorios_router
+from app.api.routes.usuarios import router as usuarios_router
+from app.api.routes.mensajes_ia import router as mensajes_ia_router
+
 
 api_router = APIRouter()
 api_router.include_router(clientes_router)
@@ -40,3 +43,5 @@ api_router.include_router(whatsapp_router)
 api_router.include_router(pagos_router)
 api_router.include_router(formularios_router)
 api_router.include_router(recordatorios_router)
+api_router.include_router(usuarios_router)
+api_router.include_router(mensajes_ia_router)
