@@ -7,10 +7,28 @@
 const API_BASE = "http://127.0.0.1:8000";
 
 async function apiFetch(endpoint, method = "GET", body = null) {
-    const options = { method, headers: { "Content-Type": "application/json" } };
+    const headers = { "Content-Type": "application/json" };
+
+    // Adjunta el token de sesión a toda petición (una vez que el backend lo valide, esto
+    // habilita que cada endpoint pueda rechazar peticiones sin sesión o con sesión inválida).
+    if (typeof Auth !== "undefined") {
+        const token = Auth.getToken();
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const options = { method, headers };
     if (body) options.body = JSON.stringify(body);
+
     try {
         const res = await fetch(`${API_BASE}${endpoint}`, options);
+
+        // Si el backend responde 401/403, la sesión ya no es válida del lado del servidor
+        // (token vencido, revocado, etc.) → cerrar sesión local en vez de seguir como si nada.
+        if ((res.status === 401 || res.status === 403) && typeof Auth !== "undefined") {
+            Auth.logout("Tu sesión expiró o no es válida. Vuelve a iniciar sesión.");
+            throw new Error(`No autorizado (${res.status})`);
+        }
+
         if (!res.ok) throw new Error(`Error ${res.status}`);
         return await res.json();
     } catch (err) {
@@ -83,27 +101,39 @@ const ApiDetalleReserva = {
 
 // ── RECORDATORIOS (pendiente de implementar en backend) ───
 const ApiRecordatorios = {
-    listar:  async () => [],
-    crear:   async () => {}
+    listar:     async () => [],
+    crear:      async () => {},
+    actualizar: async () => {},
+    eliminar:   async () => {}
 };
 
 // ── CONVERSACIONES / MENSAJES (pendiente de implementar en backend) ──
 const ApiMensajes = {
-    listar:     async () => [],
-    porCliente: async () => []
+    listar:        async () => [],
+    porCliente:    async () => [],
+    estadisticas:  async () => ({})
 };
 
-// ── USUARIOS (pendiente de implementar en backend) ────────
+// ── USUARIOS ───────────────────────────────────
 const ApiUsuarios = {
-    listar: async () => [],
-    crear:  async () => {},
-    login:  async (data) => {
-        // Login local mientras no existe el endpoint en el backend
-        if (data.email === "admin@eventbot.pe" && data.password === "admin123") {
-            return { idUsuario: 1, nombre: "Admin Sistema", email: data.email, rol: "admin", estado: "activo" };
-        }
-        return null;
-    }
+    listar:     ()          => apiFetch("/api/usuarios"),
+    crear:      (data)      => apiFetch("/api/usuarios", "POST", data),
+    actualizar: (id, data)  => apiFetch(`/api/usuarios/${id}`, "PUT", data),
+
+    // CRÍTICO: el login ya NO valida nada en el frontend. Se envía email/contraseña
+    // al backend, y es el backend quien debe:
+    //   1) buscar el usuario por email
+    //   2) comparar la contraseña contra el hash guardado (bcrypt/argon2, nunca texto plano)
+    //   3) si es válido, emitir un token (JWT firmado, con expiración corta)
+    //   4) devolver { usuario: {...sin password...}, token: "..." }
+    // Mientras ese endpoint no exista en el backend, el login fallará (comportamiento correcto:
+    // "cerrado por defecto" en vez de aceptar cualquier contraseña).
+    login: (data) => apiFetch("/api/auth/login", "POST", data)
+};
+
+// ── FORMULARIOS (pendiente de implementar en backend) ─────
+const ApiFormularios = {
+    listar: async () => []
 };
 
 // ── STATUS ────────────────────────────────────

@@ -14,7 +14,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Recordatorios</h1>
-                <p>RECORDATORIOS · RESERVAS</p>
+                <p>Alertas y avisos programados para las reservas</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
@@ -30,7 +30,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
                         <div class="eb-stat-label">Total recordatorios</div>
-                        <div class="eb-stat-sub">RECORDATORIOS COUNT(*)</div>
+                        <div class="eb-stat-sub" id="subTotal">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -38,7 +38,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#D97706" id="statPend">—</div>
                         <div class="eb-stat-label">Pendientes</div>
-                        <div class="eb-stat-sub">estado = pendiente</div>
+                        <div class="eb-stat-sub" id="subPend">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -46,7 +46,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statEnv">—</div>
                         <div class="eb-stat-label">Enviados</div>
-                        <div class="eb-stat-sub">estado = enviado</div>
+                        <div class="eb-stat-sub" id="subEnv">Cargando...</div>
                     </div>
                 </div>
             </div>
@@ -126,14 +126,36 @@
         try {
             const res = await ApiRecordatorios.listar();
             todosRecs = res.data || res || [];
+
             document.getElementById("statTotal").textContent = todosRecs.length;
-            document.getElementById("statPend").textContent = todosRecs.filter(r => r.estado === "pendiente").length;
-            document.getElementById("statEnv").textContent = todosRecs.filter(r => r.estado === "enviado").length;
+            document.getElementById("subTotal").textContent   = todosRecs.length + " registrados";
+
+            const pendientes = todosRecs.filter(r => r.estado === "pendiente").length;
+            document.getElementById("statPend").textContent = pendientes;
+            document.getElementById("subPend").textContent   = pendientes + " de " + todosRecs.length;
+
+            const enviados = todosRecs.filter(r => r.estado === "enviado").length;
+            document.getElementById("statEnv").textContent = enviados;
+            document.getElementById("subEnv").textContent   = enviados + " de " + todosRecs.length;
+
             renderLista(todosRecs);
         } catch {
+            document.getElementById("statTotal").textContent = "—";
+            document.getElementById("subTotal").textContent   = "Sin conexión";
+            document.getElementById("statPend").textContent = "—";
+            document.getElementById("subPend").textContent   = "Sin conexión";
+            document.getElementById("statEnv").textContent = "—";
+            document.getElementById("subEnv").textContent   = "Sin conexión";
             document.getElementById("listaRecordatorios").innerHTML =
-                `<div style="padding:20px;text-align:center;color:#DC2626">❌ Error conectando con FastAPI</div>`;
+                `<div style="padding:20px;text-align:center;color:#DC2626">❌ Error conectando con el servidor</div>`;
         }
+    }
+
+    function badgeEstado(estado) {
+        if (estado === "pendiente") return `<span style="color:#D97706;font-weight:600">⏳ pendiente</span>`;
+        if (estado === "enviado")   return `<span style="color:#16A34A;font-weight:600">✅ enviado</span>`;
+        if (estado === "cancelado") return `<span style="color:#DC2626;font-weight:600">✖ cancelado</span>`;
+        return `<span style="color:#94A3B8;font-weight:600">${estado || "—"}</span>`;
     }
 
     function renderLista(lista) {
@@ -143,25 +165,26 @@
             return;
         }
         const colores = { WhatsApp: "#25D366", encuesta: "#2563EB", pago: "#D97706" };
-        div.innerHTML = lista.map(r => `
+        div.innerHTML = lista.map(r => {
+            const id = r.idRecordatorio || r.id;
+            const idReserva = r.idReservas || r.reserva;
+            return `
             <div class="eb-reminder">
                 <div class="eb-reminder-dot" style="background:${colores[r.tipo]||'#94A3B8'}"></div>
                 <div style="flex:1">
-                    <div class="eb-reminder-title">${r.tipo} · Reserva #${r.idReservas||r.reserva}</div>
-                    <div class="eb-reminder-sub">${r.mensaje||"—"}</div>
+                    <div class="eb-reminder-title">${r.tipo || "Recordatorio"} · Reserva ${idReserva ? "#"+idReserva : "—"}</div>
+                    <div class="eb-reminder-sub">${r.mensaje || "Sin mensaje"}</div>
                     <div class="eb-reminder-sub" style="margin-top:4px">
-                        📅 ${formatDate(r.fecha_programada)} · 
-                        ${r.estado==="pendiente"
-                            ? `<span style="color:#D97706;font-weight:600">⏳ pendiente</span>`
-                            : `<span style="color:#16A34A;font-weight:600">✅ enviado</span>`}
+                        📅 ${formatDate(r.fecha_programada)} · ${badgeEstado(r.estado)}
                     </div>
                 </div>
                 <div style="display:flex;gap:6px">
-                    <button class="eb-btn eb-btn-success eb-btn-sm" onclick="marcarEnviado(${r.idRecordatorio||r.id})">✅</button>
-                    <button class="eb-btn eb-btn-danger eb-btn-sm">🗑</button>
+                    ${r.estado === "pendiente" ? `<button class="eb-btn eb-btn-success eb-btn-sm" onclick="marcarEnviado(${id})">✅</button>` : ""}
+                    <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarRecordatorio(${id})">🗑</button>
                 </div>
             </div>
-        `).join("");
+        `;
+        }).join("");
     }
 
     function filtrar(q = "") {
@@ -191,8 +214,24 @@
     }
 
     async function marcarEnviado(id) {
-        showToast("✅ Marcado como enviado", "success");
-        cargarRecordatorios();
+        try {
+            await ApiRecordatorios.actualizar(id, { estado: "enviado" });
+            showToast("✅ Marcado como enviado", "success");
+            cargarRecordatorios();
+        } catch {
+            showToast("❌ No se pudo actualizar el recordatorio", "error");
+        }
+    }
+
+    async function eliminarRecordatorio(id) {
+        if (!confirm("¿Eliminar este recordatorio?")) return;
+        try {
+            await ApiRecordatorios.eliminar(id);
+            showToast("✅ Recordatorio eliminado", "success");
+            cargarRecordatorios();
+        } catch {
+            showToast("❌ No se pudo eliminar el recordatorio", "error");
+        }
     }
 
     cargarRecordatorios();

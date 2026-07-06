@@ -14,7 +14,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Gestión de eventos</h1>
-                <p>EVENTOS · PAQUETES · PAQUETES_EVENTOS</p>
+                <p>Catálogo de eventos y paquetes disponibles</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
@@ -28,14 +28,14 @@
                 <div class="eb-search-bar">
                     <div style="flex:1">
                         <div class="eb-card-title">Catálogo de eventos</div>
-                        <div class="eb-card-sub">EVENTOS JOIN PAQUETES_EVENTOS</div>
+                        <div class="eb-card-sub">Tipos de eventos disponibles</div>
                     </div>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalEvento()">+ Nuevo evento</button>
                 </div>
                 <div class="eb-table-wrap">
                     <table class="eb-table">
                         <thead>
-                            <tr><th>idEventos</th><th>nombre</th><th>descripcion</th><th>estado</th><th>Acciones</th></tr>
+                            <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr>
                         </thead>
                         <tbody id="tablaEventos">
                             <tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
@@ -48,14 +48,14 @@
             <div class="eb-card">
                 <div class="eb-search-bar">
                     <div style="flex:1">
-                        <div class="eb-card-title">Paquetes disponibles · PAQUETES</div>
+                        <div class="eb-card-title">Paquetes disponibles</div>
                     </div>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalPaquete()">+ Nuevo paquete</button>
                 </div>
                 <div class="eb-table-wrap">
                     <table class="eb-table">
                         <thead>
-                            <tr><th>idPaquetes</th><th>nombre_paquete</th><th>descripcion</th><th>precio</th><th>estado</th><th>Acciones</th></tr>
+                            <tr><th>ID</th><th>Nombre</th><th>Descripción</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
                         </thead>
                         <tbody id="tablaPaquetes">
                             <tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
@@ -136,23 +136,26 @@
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin eventos</td></tr>`;
                 return;
             }
-            tbody.innerHTML = lista.map(e => `
+            tbody.innerHTML = lista.map(e => {
+                const id = e.idEventos || e.id;
+                return `
                 <tr>
-                    <td><strong>#${String(e.idPaquetes || e.idEventos || e.id).padStart(3,"0")}</strong></td>
-                    <td style="font-weight:600">${e.nombre_paquete || e.nombre || "—"}</td>
+                    <td><strong>#${String(id).padStart(3,"0")}</strong></td>
+                    <td style="font-weight:600">${e.nombre || "—"}</td>
                     <td style="color:#475569;font-size:12px">${e.descripcion || "—"}</td>
                     <td><span class="eb-badge ${e.estado==='Activo'?'eb-badge-success':'eb-badge-gray'}">${e.estado || "Activo"}</span></td>
                     <td>
                         <div style="display:flex;gap:6px">
-                            <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
-                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarEvento(${e.idEventos||e.id})">🗑</button>
+                            <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarEvento(${id})">✏️</button>
+                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarEvento(${id})">🗑</button>
                         </div>
                     </td>
                 </tr>
-            `).join("");
+            `;
+            }).join("");
         } catch {
             document.getElementById("tablaEventos").innerHTML =
-                `<tr><td colspan="5" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+                `<tr><td colspan="5" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
         }
     }
 
@@ -165,30 +168,41 @@
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin paquetes</td></tr>`;
                 return;
             }
-            tbody.innerHTML = lista.map(p => `
+            tbody.innerHTML = lista.map(p => {
+                const id = p.idPaquetes || p.id;
+                return `
                 <tr>
-                    <td><strong>#P${String(p.idPaquetes||p.id).padStart(2,"0")}</strong></td>
-                    <td style="font-weight:600">${p.nombre_paquete || p.nombre}</td>
+                    <td><strong>#P${String(id).padStart(2,"0")}</strong></td>
+                    <td style="font-weight:600">${p.nombre_paquete || p.nombre || "—"}</td>
                     <td style="color:#475569;font-size:12px">${p.descripcion || "—"}</td>
-                    <td style="font-weight:600;color:#16A34A">${formatMoney(p.precio)}</td>
+                    <td style="font-weight:600;color:#16A34A">${formatMoney(p.precio || 0)}</td>
                     <td><span class="eb-badge eb-badge-success">${p.estado || "Activo"}</span></td>
                     <td>
                         <div style="display:flex;gap:6px">
-                            <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
-                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarPaquete(${p.idPaquetes||p.id})">🗑</button>
+                            <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarPaquete(${id})">✏️</button>
+                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarPaquete(${id})">🗑</button>
                         </div>
                     </td>
                 </tr>
-            `).join("");
+            `;
+            }).join("");
         } catch {
             document.getElementById("tablaPaquetes").innerHTML =
-                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
         }
     }
 
     function abrirModalEvento() { document.getElementById("modalEvento").classList.add("open"); }
     function abrirModalPaquete() { document.getElementById("modalPaquete").classList.add("open"); }
     function cerrar(id) { document.getElementById(id).classList.remove("open"); }
+
+    function editarEvento(id) {
+        showToast(`✏️ Edición de evento #${id} próximamente`, "info");
+    }
+
+    function editarPaquete(id) {
+        showToast(`✏️ Edición de paquete #${id} próximamente`, "info");
+    }
 
     async function guardarEvento() {
         const nombre = document.getElementById("ev-nombre").value.trim();

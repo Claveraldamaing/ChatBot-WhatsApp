@@ -14,7 +14,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Usuarios del sistema</h1>
-                <p>USUARIOS · Login · Roles · Permisos</p>
+                <p>Administración de accesos, roles y permisos</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
@@ -30,7 +30,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
                         <div class="eb-stat-label">Total usuarios</div>
-                        <div class="eb-stat-sub">USUARIOS COUNT(*)</div>
+                        <div class="eb-stat-sub" id="subTotal">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -38,7 +38,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statActivos">—</div>
                         <div class="eb-stat-label">Activos</div>
-                        <div class="eb-stat-sub">estado = activo</div>
+                        <div class="eb-stat-sub" id="subActivos">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -46,7 +46,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#DC2626" id="statBloqueados">—</div>
                         <div class="eb-stat-label">Bloqueados</div>
-                        <div class="eb-stat-sub">estado = bloqueado</div>
+                        <div class="eb-stat-sub" id="subBloqueados">Cargando...</div>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                 <div class="eb-table-wrap">
                     <table class="eb-table">
                         <thead>
-                            <tr><th>id</th><th>nombre</th><th>email</th><th>rol</th><th>estado</th><th>fecha_registro</th><th>Acciones</th></tr>
+                            <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Fecha de registro</th><th>Acciones</th></tr>
                         </thead>
                         <tbody id="tablaUsuarios">
                             <tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
@@ -120,7 +120,7 @@
                 <input class="eb-input" id="us-nombre" placeholder="Ej: Admin Sistema">
             </div>
             <div class="eb-form-group">
-                <label class="eb-label">Email <span>USUARIOS.email</span></label>
+                <label class="eb-label">Email</label>
                 <input class="eb-input" id="us-email" type="email" placeholder="admin@eventbot.pe">
             </div>
             <div class="eb-form-row">
@@ -129,7 +129,7 @@
                     <input class="eb-input" id="us-password" type="password" placeholder="••••••••">
                 </div>
                 <div class="eb-form-group">
-                    <label class="eb-label">Rol <span>USUARIOS.rol</span></label>
+                    <label class="eb-label">Rol</label>
                     <select class="eb-input" id="us-rol">
                         <option>admin</option>
                         <option>operador</option>
@@ -165,17 +165,31 @@
         try {
             const res = await ApiUsuarios.listar();
             todosUsuarios = res.data || res || [];
+
             document.getElementById("statTotal").textContent = todosUsuarios.length;
-            document.getElementById("statActivos").textContent = todosUsuarios.filter(u => u.estado === "activo").length;
-            document.getElementById("statBloqueados").textContent = todosUsuarios.filter(u => u.estado === "bloqueado").length;
+            document.getElementById("subTotal").textContent   = todosUsuarios.length + " registrados";
+
+            const activos = todosUsuarios.filter(u => u.estado === "activo").length;
+            document.getElementById("statActivos").textContent = activos;
+            document.getElementById("subActivos").textContent   = activos + " de " + todosUsuarios.length;
+
+            const bloqueados = todosUsuarios.filter(u => u.estado === "bloqueado").length;
+            document.getElementById("statBloqueados").textContent = bloqueados;
+            document.getElementById("subBloqueados").textContent   = bloqueados + " de " + todosUsuarios.length;
+
             renderTabla(todosUsuarios);
         } catch {
-            // Mostrar datos de sesión si no hay endpoint
+            // Sin endpoint de usuarios: mostrar al menos la sesión activa
             const session = Auth.getSession();
             todosUsuarios = session ? [{ idUsuario: session.id, nombre: session.nombre, email: session.email, rol: session.rol, estado: "activo", fecha_registro: new Date() }] : [];
+
             document.getElementById("statTotal").textContent = todosUsuarios.length;
+            document.getElementById("subTotal").textContent   = "Sin conexión al listado completo";
             document.getElementById("statActivos").textContent = todosUsuarios.length;
+            document.getElementById("subActivos").textContent   = "—";
             document.getElementById("statBloqueados").textContent = 0;
+            document.getElementById("subBloqueados").textContent   = "—";
+
             renderTabla(todosUsuarios);
         }
     }
@@ -186,28 +200,32 @@
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Sin usuarios</td></tr>`;
             return;
         }
-        tbody.innerHTML = lista.map(u => `
+        tbody.innerHTML = lista.map(u => {
+            const id = u.idUsuario || u.id;
+            const nombreSeguro = (u.nombre || "").replace(/'/g, "\\'");
+            return `
             <tr>
-                <td><strong>#${u.idUsuario||u.id}</strong></td>
+                <td><strong>#${id}</strong></td>
                 <td>
                     <div style="display:flex;align-items:center;gap:10px">
                         <div class="eb-initials">${getInitials(u.nombre)}</div>
-                        <div style="font-weight:600;font-size:13px">${u.nombre}</div>
+                        <div style="font-weight:600;font-size:13px">${u.nombre || "Sin nombre"}</div>
                     </div>
                 </td>
-                <td style="color:#475569">${u.email}</td>
+                <td style="color:#475569">${u.email || "—"}</td>
                 <td>${badgeRol(u.rol)}</td>
                 <td>${badgeEstado(u.estado)}</td>
                 <td style="color:#94A3B8;font-size:12px">${formatDate(u.fecha_registro)}</td>
                 <td>
                     <div style="display:flex;gap:6px">
-                        <button class="eb-btn eb-btn-secondary eb-btn-sm">✏️</button>
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarUsuario(${id})">✏️</button>
                         <button class="eb-btn eb-btn-danger eb-btn-sm"
-                            onclick="bloquearUsuario(${u.idUsuario||u.id}, '${u.nombre}')">🔒</button>
+                            onclick="bloquearUsuario(${id}, '${nombreSeguro}')">🔒</button>
                     </div>
                 </td>
             </tr>
-        `).join("");
+        `;
+        }).join("");
     }
 
     function badgeRol(rol) {
@@ -260,8 +278,17 @@
 
     async function bloquearUsuario(id, nombre) {
         if (!confirm(`¿Bloquear usuario ${nombre}?`)) return;
-        showToast(`🔒 Usuario ${nombre} bloqueado`, "warning");
-        cargarUsuarios();
+        try {
+            await ApiUsuarios.actualizar(id, { estado: "bloqueado" });
+            showToast(`🔒 Usuario ${nombre} bloqueado`, "warning");
+            cargarUsuarios();
+        } catch {
+            showToast("❌ No se pudo bloquear al usuario", "error");
+        }
+    }
+
+    function editarUsuario(id) {
+        showToast(`✏️ Edición de usuario #${id} próximamente`, "info");
     }
 
     cargarUsuarios();
