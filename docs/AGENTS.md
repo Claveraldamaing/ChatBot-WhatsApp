@@ -47,9 +47,9 @@ ChatBot_WhatsApp/
 ├── requirements.txt              # Dependencias Python
 │
 ├── app/
-│   ├── main.py                   # FastAPI: CORS + routers + StaticFiles
+│   ├── main.py                   # FastAPI: CORS + routers + StaticFiles + scheduler
 │   ├── api/
-│   │   ├── router.py             # Include de todos los routers
+│   │   ├── router.py             # Include de todos los routers (13 modulos)
 │   │   └── routes/
 │   │       ├── clientes.py       # CRUD clientes
 │   │       ├── eventos.py        # CRUD eventos
@@ -57,11 +57,13 @@ ChatBot_WhatsApp/
 │   │       ├── paquetes_eventos.py
 │   │       ├── reservas.py       # CRUD + finalizar-pago
 │   │       ├── detalle_reserva.py
-│   │       ├── pagos.py          # CRUD + confirmar-pago
-│   │       ├── recordatorios.py  # CRUD + generar-para-reserva
+│   │       ├── pagos.py          # CRUD + confirmar-pago (idempotente)
+│   │       ├── recordatorios.py  # CRUD + generar-para-reserva + pendientes-para-enviar
 │   │       ├── ia.py             # Consultar IA
 │   │       ├── whatsapp.py       # Webhook local /webhook-local
-│   │       └── formularios.py    # Formularios HTML
+│   │       ├── formularios.py    # Formularios HTML
+│   │       ├── usuarios.py       # CRUD + auth/login JWT
+│   │       └── mensajes_ia.py    # Listar/eliminar historial
 │   ├── schemas/
 │   │   ├── cliente.py
 │   │   ├── evento.py
@@ -71,7 +73,10 @@ ChatBot_WhatsApp/
 │   │   ├── detalle_reserva.py
 │   │   ├── pago.py
 │   │   ├── recordatorio.py
-│   │   └── ia.py
+│   │   ├── ia.py
+│   │   ├── mensaje_ia.py
+│   │   ├── usuario.py
+│   │   └── whatsapp.py
 │   ├── services/
 │   │   ├── cliente_service.py
 │   │   ├── evento_service.py
@@ -82,7 +87,9 @@ ChatBot_WhatsApp/
 │   │   ├── pago_service.py
 │   │   ├── recordatorio_service.py
 │   │   ├── ia_service.py
-│   │   └── whatsapp_service.py
+│   │   ├── whatsapp_service.py
+│   │   ├── mensajes_ia_service.py
+│   │   └── usuario_service.py
 │   ├── repositories/
 │   │   ├── cliente_repository.py
 │   │   ├── evento_repository.py
@@ -92,10 +99,12 @@ ChatBot_WhatsApp/
 │   │   ├── detalle_reserva_repository.py
 │   │   ├── pago_repository.py
 │   │   ├── recordatorio_repository.py
-│   │   └── mensajes_ia_repository.py
+│   │   ├── mensajes_ia_repository.py
+│   │   └── usuario_repository.py
 │   ├── core/
 │   │   ├── config.py
-│   │   └── database.py
+│   │   ├── database.py          # ConnectionPool psycopg
+│   │   └── scheduler.py         # APScheduler: recordatorios automaticos
 │   └── templates/
 │       ├── formulario_clientes.html
 │       └── formulario_reserva.html
@@ -120,7 +129,9 @@ ChatBot_WhatsApp/
 │       └── usuarios.html
 │
 ├── docs/
-│   └── BD.md                 # Documentacion de base de datos
+│   ├── AGENTS.md              # ← ESTE ARCHIVO
+│   ├── README.md              # Documentacion general
+│   └── BD.md                  # Documentacion de base de datos
 │
 └── whatsapp-bridge/
     ├── bridge.js             # whatsapp-web.js (Node.js)
@@ -254,7 +265,7 @@ usuarios (independiente)
 
 ---
 
-## API REST — 48 Endpoints
+## API REST — 57 Endpoints
 
 ### Clientes
 | Metodo | Ruta | Accion |
@@ -322,12 +333,13 @@ usuarios (independiente)
 | POST | `/api/pagos` | Crear |
 | PUT | `/api/pagos/{id}` | Actualizar |
 | DELETE | `/api/pagos/{id}` | Eliminar |
-| PUT | `/api/pagos/{id}/confirmar` | Confirmar pago (50%) |
+| PUT | `/api/pagos/{id}/confirmar` | Confirmar pago (50%, idempotente) |
 
 ### Recordatorios
 | Metodo | Ruta | Accion |
 |--------|------|--------|
 | GET | `/api/recordatorios` | Listar |
+| GET | `/api/recordatorios/pendientes-para-enviar` | Listar pendientes con telefono |
 | GET | `/api/recordatorios/{id}` | Obtener |
 | GET | `/api/reservas/{id}/recordatorios` | Por reserva |
 | POST | `/api/recordatorios` | Crear |
@@ -351,6 +363,22 @@ usuarios (independiente)
 | GET | `/formulario/cliente?telefono=X` | Formulario registro |
 | GET | `/formulario/reserva?telefono=X` | Formulario reserva |
 | POST | `/formulario/reserva` | Crear reserva desde form |
+
+### Mensajes IA
+| Metodo | Ruta | Accion |
+|--------|------|--------|
+| GET | `/api/clientes/{id}/mensajes` | Historial conversacion |
+| DELETE | `/api/mensajes/{id}` | Eliminar mensaje |
+
+### Usuarios
+| Metodo | Ruta | Accion |
+|--------|------|--------|
+| POST | `/api/auth/login` | Login (JWT) |
+| GET | `/api/usuarios` | Listar |
+| GET | `/api/usuarios/{id}` | Obtener |
+| POST | `/api/usuarios` | Crear |
+| PUT | `/api/usuarios/{id}` | Actualizar |
+| DELETE | `/api/usuarios/{id}` | Eliminar |
 
 ---
 
@@ -446,13 +474,38 @@ NGROK_URL=https://tu-url.ngrok-free.dev
 
 ---
 
-## Cambios de la Sesion Actual (30/06/2026)
+## Cambios de la Sesion Actual (03/07/2026)
 
-1. **CORS Middleware** agregado en `main.py` (allow all origins)
-2. **StaticFiles** montado en `/` para servir el frontend desde FastAPI
-3. **api.js**: `API_BASE` cambiado de `"http://127.0.0.1:8000"` a `""` (rutas relativas, elimina CORS)
-4. **Archivos eliminados:** `bugs por arreglar dia 27.md`, `docs/ACTUALIZACION_BRIDGE_LOCAL.md`, `CONTEXTO_META.md`
-5. **AGENTS.md**: Reescribito como documentacion unificada del proyecto
+### Backend — Modulos nuevos
+1. **`usuarios`** modulo completo: schema + service + repository + router (CRUD + auth JWT). Login real con bcrypt + JWT.
+2. **`mensajes_ia`** modulo completo: schema + service + repository + router (listar historial por cliente, eliminar mensajes).
+3. **`scheduler.py`** — APScheduler para envio automatico de recordatorios cada 1 minuto.
+
+### Backend — Bugfixes y mejoras
+4. **`recordatorios.py`**: Arreglado ruta `pendientes-para-enviar` (antes daba 422 por conflicto con `{recordatorio_id}`). Movida antes de la ruta greedy.
+5. **`pago_service.py`**: `confirmar_pago()` ahora es idempotente — si ya esta pagado retorna 200 en vez de 404.
+6. **`reserva_service.py`**: `finalizar_pago()` ahora es idempotente — si ya esta completada retorna 200 en vez de 404.
+7. **`ia_service.py`**: Corregido indices del historial (enviaba `idMensajes_ia: idClientes` en vez de `rol: contenido`).
+8. **`usuario_service.py`**: `_normalize()` ya no incluye `password_hash` (causaba 500). `update_usuario()` ahora hashea la password correctamente.
+9. **`usuario_repository.py`**: UPDATE ahora incluye `password_hash`.
+
+### Backend — Infraestructura
+10. **`database.py`**: ConnectionPool de psycopg (login/bg) con `init_pool()`.
+11. **`main.py`**: Agregado `init_pool()` + `iniciar_scheduler()` en startup.
+
+### Archivos nuevos (9)
+- `app/api/routes/usuarios.py`, `app/api/routes/mensajes_ia.py`
+- `app/schemas/usuario.py`, `app/schemas/mensaje_ia.py`, `app/schemas/whatsapp.py`
+- `app/services/usuario_service.py`, `app/services/mensajes_ia_service.py`
+- `app/repositories/usuario_repository.py`
+- `app/core/scheduler.py`
+
+### Archivos modificados (11)
+- `app/api/router.py`, `app/main.py`, `app/core/database.py`
+- `app/api/routes/recordatorios.py`, `app/api/routes/whatsapp.py`, `app/api/routes/formularios.py`
+- `app/services/ia_service.py`, `app/services/pago_service.py`, `app/services/reserva_service.py`
+- `app/repositories/mensajes_ia_repository.py`
+- `requirements.txt`
 
 ---
 
@@ -480,10 +533,13 @@ node bridge.js
 
 ## Pendientes / Proximos Pasos
 
-- [ ] Modulo `usuarios` backend (login real con JWT)
+- [x] Modulo `usuarios` backend (login real con JWT)
 - [ ] Conectar `ApiRecordatorios` del frontend a los endpoints reales
 - [ ] Conectar `ApiMensajes` del frontend (chat history)
-- [ ] Envio automatico de recordatorios (cron/scheduler)
+- [x] Envio automatico de recordatorios (cron/scheduler)
 - [ ] Encuesta de satisfaccion post-evento
 - [ ] Arreglar field mismatches (clienteNombre, estados mayus/minus)
 - [ ] Normalizar campo `nombre_paquete` en frontend (backend espera `nombre`)
+- [ ] Bugs criticos pendientes: `password_hash` en `usuario_service._normalize()` ya corregido
+- [ ] Bug: `ia_service.py` indices historial — corregido
+- [ ] Bug: pagos 404 intermitentes — corregido (idempotente)

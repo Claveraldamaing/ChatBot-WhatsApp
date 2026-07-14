@@ -14,7 +14,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Conversaciones</h1>
-                <p>MENSAJES_IA · CLIENTES · WhatsApp Bot</p>
+                <p>Historial de mensajes con clientes vía WhatsApp Bot</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
@@ -30,7 +30,7 @@
                     <div class="eb-card-header">
                         <div>
                             <div class="eb-card-title">💬 Clientes con mensajes</div>
-                            <div class="eb-card-sub">MENSAJES_IA JOIN CLIENTES</div>
+                            <div class="eb-card-sub">Clientes que han conversado con el bot</div>
                         </div>
                     </div>
                     <div class="eb-search-bar" style="padding:12px 16px">
@@ -38,11 +38,15 @@
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                             </svg>
-                            <input class="eb-search" placeholder="Buscar cliente...">
+                            <input class="eb-search" id="buscadorConv" placeholder="Buscar cliente..." oninput="filtrarClientes()">
                         </div>
                     </div>
                     <div id="listaClientes">
                         <div style="padding:20px;text-align:center;color:#94A3B8">Cargando...</div>
+                    </div>
+                    <div class="eb-pagination" style="padding:12px 16px;border-top:1px solid #E2E8F0">
+                        <div id="pagBotones" style="display:flex;gap:6px"></div>
+                        <div class="eb-page-info" id="paginaInfo"></div>
                     </div>
                 </div>
 
@@ -85,25 +89,25 @@
             <div class="eb-card">
                 <div class="eb-card-header">
                     <div class="eb-card-title">🤖 Estadísticas del Bot</div>
-                    <div class="eb-card-sub">MENSAJES_IA · resumen general</div>
+                    <div class="eb-card-sub">Resumen general de la actividad del bot</div>
                 </div>
                 <div class="eb-card-body">
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#2563EB" id="statMsgs">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px">Total mensajes</div>
+                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subMsgs">Cargando...</div>
                         </div>
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#16A34A" id="statConReserva">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px">Con reserva</div>
+                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subConReserva">Cargando...</div>
                         </div>
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#D97706" id="statConsultas">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px">Consultas</div>
+                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subConsultas">Cargando...</div>
                         </div>
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#7C3AED" id="statRespuestas">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px">Respuestas IA</div>
+                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subRespuestas">Cargando...</div>
                         </div>
                     </div>
                 </div>
@@ -120,42 +124,116 @@
     Auth.require();
     let clienteActual = null;
     let mensajesActuales = [];
+    let todosClientesConv = [];
+    let clientesConvVista = [];
+    let paginaActual = 1;
+    const PAGE_SIZE = 10;
 
     async function cargarClientes() {
         try {
             const res = await ApiClientes.listar();
-            const clientes = res.data || res || [];
-            const div = document.getElementById("listaClientes");
+            todosClientesConv = res.data || res || [];
+            clientesConvVista = todosClientesConv;
+            paginaActual = 1;
+            renderPagina();
+            document.getElementById("statConsultas").textContent = todosClientesConv.length;
+            document.getElementById("subConsultas").textContent  = "Clientes registrados";
 
-            if (!clientes.length) {
-                div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin clientes</div>`;
-                return;
-            }
-
-            div.innerHTML = clientes.map(c => `
-                <div onclick="seleccionarCliente(${c.idClientes||c.id}, '${c.nombre}')"
-                    style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid #E2E8F0;transition:background 0.15s"
-                    onmouseover="this.style.background='#F8FAFC'"
-                    onmouseout="this.style.background='white'">
-                    <div class="eb-initials">${getInitials(c.nombre)}</div>
-                    <div style="flex:1">
-                        <div style="font-weight:600;font-size:13px">${c.nombre}</div>
-                        <div style="font-size:11px;color:#94A3B8">${c.telefono||c.email||"—"}</div>
-                    </div>
-                    <div style="font-size:10px;color:#94A3B8">#{${c.idClientes||c.id}}</div>
-                </div>
-            `).join("");
-
-            // Stats
-            document.getElementById("statMsgs").textContent = clientes.length * 2;
-            document.getElementById("statConReserva").textContent = clientes.filter(c => c.total_reservas > 0).length || "—";
-            document.getElementById("statConsultas").textContent = clientes.length;
-            document.getElementById("statRespuestas").textContent = clientes.length;
+            const conReserva = todosClientesConv.filter(c => Number(c.total_reservas) > 0).length;
+            document.getElementById("statConReserva").textContent = conReserva;
+            document.getElementById("subConReserva").textContent  = conReserva + " de " + todosClientesConv.length + " con reserva";
 
         } catch {
             document.getElementById("listaClientes").innerHTML =
-                `<div style="padding:20px;text-align:center;color:#DC2626">❌ Error conectando con FastAPI</div>`;
+                `<div style="padding:20px;text-align:center;color:#DC2626">❌ Error conectando con el servidor</div>`;
+            document.getElementById("pagBotones").innerHTML = "";
+            document.getElementById("paginaInfo").textContent = "";
+            document.getElementById("statConsultas").textContent = "—";
+            document.getElementById("subConsultas").textContent  = "Sin conexión";
+            document.getElementById("statConReserva").textContent = "—";
+            document.getElementById("subConReserva").textContent  = "Sin conexión";
         }
+
+        // Estadísticas reales de mensajes IA (si el endpoint existe)
+        try {
+            const res = await ApiMensajes.estadisticas();
+            const data = res.data || res || {};
+            document.getElementById("statMsgs").textContent = data.total_mensajes ?? "—";
+            document.getElementById("subMsgs").textContent  = "Total mensajes";
+            document.getElementById("statRespuestas").textContent = data.total_respuestas ?? "—";
+            document.getElementById("subRespuestas").textContent  = "Respuestas del bot";
+        } catch {
+            document.getElementById("statMsgs").textContent = "—";
+            document.getElementById("subMsgs").textContent  = "No disponible";
+            document.getElementById("statRespuestas").textContent = "—";
+            document.getElementById("subRespuestas").textContent  = "No disponible";
+        }
+    }
+
+    function renderListaClientes(clientes) {
+        const div = document.getElementById("listaClientes");
+        if (!clientes.length) {
+            div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin clientes</div>`;
+            return;
+        }
+        div.innerHTML = clientes.map(c => {
+            const id = c.idClientes || c.id;
+            const nombreSeguro = (c.nombre || "").replace(/'/g, "\\'");
+            return `
+            <div onclick="seleccionarCliente(${id}, '${nombreSeguro}')"
+                style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid #E2E8F0;transition:background 0.15s"
+                onmouseover="this.style.background='#F8FAFC'"
+                onmouseout="this.style.background='white'">
+                <div class="eb-initials">${getInitials(c.nombre)}</div>
+                <div style="flex:1">
+                    <div style="font-weight:600;font-size:13px">${c.nombre || "Sin nombre"}</div>
+                    <div style="font-size:11px;color:#94A3B8">${c.telefono || c.email || "—"}</div>
+                </div>
+                <div style="font-size:10px;color:#94A3B8">#${id}</div>
+            </div>
+        `;
+        }).join("");
+    }
+
+    function filtrarClientes() {
+        const q = document.getElementById("buscadorConv").value.toLowerCase();
+        clientesConvVista = todosClientesConv.filter(c =>
+            (c.nombre || "").toLowerCase().includes(q)
+        );
+        paginaActual = 1; // toda nueva búsqueda vuelve a la página 1
+        renderPagina();
+    }
+
+    // Pinta la página actual de clientesConvVista (10 por página) y genera los botones de paginación
+    function renderPagina() {
+        const totalPaginas = Math.max(1, Math.ceil(clientesConvVista.length / PAGE_SIZE));
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+        if (paginaActual < 1) paginaActual = 1;
+
+        const inicio = (paginaActual - 1) * PAGE_SIZE;
+        const trozo = clientesConvVista.slice(inicio, inicio + PAGE_SIZE);
+        renderListaClientes(trozo);
+
+        const infoDiv = document.getElementById("paginaInfo");
+        if (!clientesConvVista.length) {
+            infoDiv.textContent = "Sin resultados";
+        } else {
+            const desde = inicio + 1;
+            const hasta = Math.min(inicio + PAGE_SIZE, clientesConvVista.length);
+            infoDiv.textContent = `${desde}–${hasta} de ${clientesConvVista.length}`;
+        }
+
+        const cont = document.getElementById("pagBotones");
+        let html = "";
+        for (let p = 1; p <= totalPaginas; p++) {
+            html += `<div class="eb-page-btn${p === paginaActual ? " active" : ""}" onclick="irAPagina(${p})">${p}</div>`;
+        }
+        cont.innerHTML = html;
+    }
+
+    function irAPagina(p) {
+        paginaActual = p;
+        renderPagina();
     }
 
     async function seleccionarCliente(id, nombre) {
@@ -169,11 +247,8 @@
             mensajesActuales = res.data || res || [];
             renderChat(mensajesActuales);
         } catch {
-            // Mostrar mensajes de ejemplo si no hay endpoint
-            renderChat([
-                { rol: "user", contenido: "Hola, quiero información sobre sus eventos", fecha_hora_mensaje: new Date() },
-                { rol: "assistant", contenido: "¡Hola! Bienvenido a EventBot AI. Tenemos varios paquetes disponibles desde S/.5,000. ¿Qué tipo de evento está planeando?", fecha_hora_mensaje: new Date() },
-            ]);
+            div.innerHTML = `<div style="text-align:center;color:#667781;font-size:12px;padding:20px">Sin mensajes registrados para este cliente</div>`;
+            mensajesActuales = [];
         }
     }
 
@@ -194,7 +269,7 @@
                     font-size:13px;
                     line-height:1.5;
                 ">
-                    ${m.contenido||m.mensaje||"—"}
+                    ${m.contenido || m.mensaje || "—"}
                     <div style="font-size:10px;color:#94A3B8;margin-top:4px;text-align:right">
                         ${m.rol==='user'?'👤 Cliente':'🤖 Bot'} · ${formatDate(m.fecha_hora_mensaje)}
                     </div>
@@ -205,18 +280,17 @@
     }
 
     async function enviarMensaje() {
+        if (!clienteActual) { showToast("⚠️ Selecciona un cliente primero", "warning"); return; }
         const input = document.getElementById("inputMensaje");
         const texto = input.value.trim();
         if (!texto) return;
 
-        // Agregar mensaje del usuario al chat
         mensajesActuales.push({ rol: "user", contenido: texto, fecha_hora_mensaje: new Date() });
         renderChat(mensajesActuales);
         input.value = "";
 
-        // Enviar a FastAPI/IA
         try {
-            const res = await apiFetch("/api/ia", "POST", { mensaje: texto });
+            const res = await apiFetch("/api/ia", "POST", { mensaje: texto, id_cliente: clienteActual });
             const respuesta = res.respuesta || res.response || "Procesando...";
             mensajesActuales.push({ rol: "assistant", contenido: respuesta, fecha_hora_mensaje: new Date() });
             renderChat(mensajesActuales);

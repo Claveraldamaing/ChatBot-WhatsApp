@@ -15,7 +15,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Clientes</h1>
-                <p>CLIENTES · MENSAJES_IA · RESERVAS</p>
+                <p>Gestión de clientes registrados en el sistema</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline">
@@ -36,7 +36,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#2563EB" id="statTotal">—</div>
                         <div class="eb-stat-label">Total clientes</div>
-                        <div class="eb-stat-sub">CLIENTES COUNT(*)</div>
+                        <div class="eb-stat-sub" id="subTotal">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -44,7 +44,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statConReservas">—</div>
                         <div class="eb-stat-label">Con reservas</div>
-                        <div class="eb-stat-sub">JOIN RESERVAS</div>
+                        <div class="eb-stat-sub" id="subConReservas">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -52,7 +52,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#D97706" id="statMensajes">—</div>
                         <div class="eb-stat-label">Mensajes IA</div>
-                        <div class="eb-stat-sub">MENSAJES_IA</div>
+                        <div class="eb-stat-sub" id="subMensajes">No disponible</div>
                     </div>
                 </div>
             </div>
@@ -74,11 +74,11 @@
                     <table class="eb-table">
                         <thead>
                             <tr>
-                                <th>id</th>
-                                <th>nombre</th>
-                                <th>telefono</th>
-                                <th>email</th>
-                                <th>fecha_reg.</th>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Email</th>
+                                <th>Fecha de registro</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -89,9 +89,7 @@
                 </div>
 
                 <div class="eb-pagination">
-                    <div class="eb-page-btn active">1</div>
-                    <div class="eb-page-btn">2</div>
-                    <div class="eb-page-btn">3</div>
+                    <div id="pagBotones" style="display:flex;gap:6px"></div>
                     <div class="eb-page-info" id="paginaInfo"></div>
                 </div>
             </div>
@@ -135,28 +133,45 @@
 <script>
     Auth.require();
     let todosClientes = [];
+    let clientesVista = [];
+    let paginaActual = 1;
+    const PAGE_SIZE = 10;
 
     async function cargarClientes() {
         try {
             const res = await ApiClientes.listar();
             todosClientes = res.data || res || [];
+
             document.getElementById("statTotal").textContent = todosClientes.length;
-            document.getElementById("statConReservas").textContent =
-                todosClientes.filter(c => c.total_reservas > 0).length || "—";
+            document.getElementById("subTotal").textContent   = todosClientes.length + " en el sistema";
+
+            const conReservas = todosClientes.filter(c => Number(c.total_reservas) > 0).length;
+            document.getElementById("statConReservas").textContent = conReservas;
+            document.getElementById("subConReservas").textContent  = conReservas + " de " + todosClientes.length + " clientes";
+
+            // No hay endpoint de mensajes IA todavía
             document.getElementById("statMensajes").textContent = "—";
-            document.getElementById("paginaInfo").textContent =
-                `Mostrando ${todosClientes.length} clientes`;
-            renderTabla(todosClientes);
+            document.getElementById("subMensajes").textContent  = "No disponible";
+
+            clientesVista = todosClientes;
+            paginaActual = 1;
+            renderPagina();
         } catch (err) {
+            document.getElementById("statTotal").textContent = "—";
+            document.getElementById("subTotal").textContent   = "Sin conexión";
+            document.getElementById("statConReservas").textContent = "—";
+            document.getElementById("subConReservas").textContent  = "Sin conexión";
             document.getElementById("tablaClientes").innerHTML =
-                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+                `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
+            document.getElementById("pagBotones").innerHTML = "";
+            document.getElementById("paginaInfo").textContent = "";
         }
     }
 
     function renderTabla(lista) {
         const tbody = document.getElementById("tablaClientes");
         if (!lista.length) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin clientes</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin clientes registrados</td></tr>`;
             return;
         }
         tbody.innerHTML = lista.map(c => `
@@ -165,7 +180,7 @@
                 <td>
                     <div style="display:flex;align-items:center;gap:10px">
                         <div class="eb-initials">${getInitials(c.nombre)}</div>
-                        <div style="font-weight:600;font-size:13px">${c.nombre}</div>
+                        <div style="font-weight:600;font-size:13px">${c.nombre || "Sin nombre"}</div>
                     </div>
                 </td>
                 <td style="color:#475569">${c.telefono || "—"}</td>
@@ -174,7 +189,7 @@
                 <td>
                     <div style="display:flex;gap:6px">
                         <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="verCliente(${c.idClientes || c.id})">👁 Ver</button>
-                        <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarCliente(${c.idClientes || c.id}, '${c.nombre}')">🗑</button>
+                        <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarCliente(${c.idClientes || c.id}, '${(c.nombre || "").replace(/'/g, "\\'")}')">🗑</button>
                     </div>
                 </td>
             </tr>
@@ -183,11 +198,44 @@
 
     function filtrar() {
         const q = document.getElementById("buscador").value.toLowerCase();
-        const filtrados = todosClientes.filter(c =>
+        clientesVista = todosClientes.filter(c =>
             (c.nombre || "").toLowerCase().includes(q) ||
             (c.email || "").toLowerCase().includes(q)
         );
-        renderTabla(filtrados);
+        paginaActual = 1; // toda nueva búsqueda vuelve a la página 1
+        renderPagina();
+    }
+
+    // Pinta la página actual de clientesVista (10 por página) y genera los botones de paginación
+    function renderPagina() {
+        const totalPaginas = Math.max(1, Math.ceil(clientesVista.length / PAGE_SIZE));
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+        if (paginaActual < 1) paginaActual = 1;
+
+        const inicio = (paginaActual - 1) * PAGE_SIZE;
+        const trozo = clientesVista.slice(inicio, inicio + PAGE_SIZE);
+        renderTabla(trozo);
+
+        const infoDiv = document.getElementById("paginaInfo");
+        if (!clientesVista.length) {
+            infoDiv.textContent = "Sin resultados";
+        } else {
+            const desde = inicio + 1;
+            const hasta = Math.min(inicio + PAGE_SIZE, clientesVista.length);
+            infoDiv.textContent = `Mostrando ${desde}–${hasta} de ${clientesVista.length} clientes`;
+        }
+
+        const cont = document.getElementById("pagBotones");
+        let html = "";
+        for (let p = 1; p <= totalPaginas; p++) {
+            html += `<div class="eb-page-btn${p === paginaActual ? " active" : ""}" onclick="irAPagina(${p})">${p}</div>`;
+        }
+        cont.innerHTML = html;
+    }
+
+    function irAPagina(p) {
+        paginaActual = p;
+        renderPagina();
     }
 
     function abrirModal() {

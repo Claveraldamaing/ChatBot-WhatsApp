@@ -30,14 +30,14 @@ Automatizar la atencion al cliente, mostrar eventos y paquetes, registrar reserv
 
 ```
 ChatBot_WhatsApp/
-├── app/                  # Backend FastAPI (10 modulos)
+├── app/                  # Backend FastAPI (13 modulos)
 ├── frontend/             # Panel admin (10 vistas)
 ├── whatsapp-bridge/      # Bridge Node.js
-├── docs/                 # Documentacion BD
+├── docs/                 # Documentacion
 ├── .env, AGENTS.md, README.md
 ```
 
-### Modulos (11)
+### Modulos (13)
 
 | Modulo | Route | Schema | Service | Repository |
 |--------|-------|--------|---------|------------|
@@ -49,6 +49,8 @@ ChatBot_WhatsApp/
 | detalle_reserva | ✅ | ✅ | ✅ | ✅ |
 | pagos | ✅ | ✅ | ✅ | ✅ |
 | recordatorios | ✅ | ✅ | ✅ | ✅ |
+| mensajes_ia | ✅ | ✅ | ✅ | ✅ |
+| usuarios | ✅ | ✅ | ✅ | ✅ |
 | ia | ✅ | ✅ | ✅ | ✅ |
 | whatsapp | ✅ | — | ✅ | — |
 | formularios | ✅ | — | — | — |

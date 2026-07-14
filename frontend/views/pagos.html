@@ -14,7 +14,7 @@
         <header class="eb-header">
             <div class="eb-header-title">
                 <h1>Pagos</h1>
-                <p>PAGOS · RESERVAS · CLIENTES</p>
+                <p>Registro y seguimiento de pagos de reservas</p>
             </div>
             <div class="eb-header-right">
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
@@ -30,7 +30,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statTotal">—</div>
                         <div class="eb-stat-label">Ingresos totales</div>
-                        <div class="eb-stat-sub">SUM(monto_pagado)</div>
+                        <div class="eb-stat-sub" id="subTotal">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -38,7 +38,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#2563EB" id="statPagados">—</div>
                         <div class="eb-stat-label">Pagos completados</div>
-                        <div class="eb-stat-sub">estado = Pagado</div>
+                        <div class="eb-stat-sub" id="subPagados">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
@@ -46,7 +46,7 @@
                     <div>
                         <div class="eb-stat-val" style="color:#D97706" id="statParciales">—</div>
                         <div class="eb-stat-label">Pagos parciales</div>
-                        <div class="eb-stat-sub">estado = Parcial</div>
+                        <div class="eb-stat-sub" id="subParciales">Cargando...</div>
                     </div>
                 </div>
             </div>
@@ -72,7 +72,7 @@
                 <div class="eb-table-wrap">
                     <table class="eb-table">
                         <thead>
-                            <tr><th>idPagos</th><th>Reserva</th><th>monto_pagado</th><th>metodo_pago</th><th>fecha_pago</th><th>estado</th><th>referencia</th><th>Acciones</th></tr>
+                            <tr><th>ID</th><th>Reserva</th><th>Monto</th><th>Método de pago</th><th>Fecha de pago</th><th>Estado</th><th>Referencia</th><th>Acciones</th></tr>
                         </thead>
                         <tbody id="tablaPagos">
                             <tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Cargando...</td></tr>
@@ -80,8 +80,7 @@
                     </table>
                 </div>
                 <div class="eb-pagination">
-                    <div class="eb-page-btn active">1</div>
-                    <div class="eb-page-btn">2</div>
+                    <div id="pagBotones" style="display:flex;gap:6px"></div>
                     <div class="eb-page-info" id="paginaInfo"></div>
                 </div>
             </div>
@@ -98,7 +97,7 @@
         </div>
         <div class="eb-modal-body">
             <div class="eb-form-group">
-                <label class="eb-label">ID Reserva <span>RESERVAS.idReservas</span></label>
+                <label class="eb-label">ID Reserva</label>
                 <input class="eb-input" id="pago-reserva" type="number" placeholder="1024">
             </div>
             <div class="eb-form-row">
@@ -145,43 +144,68 @@
 <script>
     Auth.require();
     let todosPagos = [];
+    let pagosVista = [];
+    let paginaActual = 1;
+    const PAGE_SIZE = 10;
 
     async function cargarPagos() {
         try {
             const res = await ApiPagos.listar();
             todosPagos = res.data || res || [];
-            const total = todosPagos.reduce((s,p) => s + (p.monto_pagado||p.monto||0), 0);
+
+            const total = todosPagos.reduce((s,p) => s + Number(p.monto_pagado || p.monto || 0), 0);
             document.getElementById("statTotal").textContent = formatMoney(total);
-            document.getElementById("statPagados").textContent = todosPagos.filter(p => p.estado==="Pagado").length;
-            document.getElementById("statParciales").textContent = todosPagos.filter(p => p.estado==="Parcial").length;
-            document.getElementById("paginaInfo").textContent = `Mostrando ${todosPagos.length} pagos`;
-            renderTabla(todosPagos);
+            document.getElementById("subTotal").textContent   = todosPagos.length + " pagos registrados";
+
+            const pagados = todosPagos.filter(p => p.estado === "Pagado").length;
+            document.getElementById("statPagados").textContent = pagados;
+            document.getElementById("subPagados").textContent   = pagados + " de " + todosPagos.length;
+
+            const parciales = todosPagos.filter(p => p.estado === "Parcial").length;
+            document.getElementById("statParciales").textContent = parciales;
+            document.getElementById("subParciales").textContent   = parciales + " de " + todosPagos.length;
+
+            pagosVista = todosPagos;
+            paginaActual = 1;
+            renderPagina();
         } catch {
+            document.getElementById("statTotal").textContent = "—";
+            document.getElementById("subTotal").textContent   = "Sin conexión";
+            document.getElementById("statPagados").textContent = "—";
+            document.getElementById("subPagados").textContent   = "Sin conexión";
+            document.getElementById("statParciales").textContent = "—";
+            document.getElementById("subParciales").textContent   = "Sin conexión";
             document.getElementById("tablaPagos").innerHTML =
-                `<tr><td colspan="8" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con FastAPI</td></tr>`;
+                `<tr><td colspan="8" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
+            document.getElementById("pagBotones").innerHTML = "";
+            document.getElementById("paginaInfo").textContent = "";
         }
     }
 
     function renderTabla(lista) {
         const tbody = document.getElementById("tablaPagos");
         if (!lista.length) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Sin pagos</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Sin pagos registrados</td></tr>`;
             return;
         }
-        tbody.innerHTML = lista.map(p => `
+        tbody.innerHTML = lista.map(p => {
+            const id = p.idPagos || p.id;
+            const idReserva = p.idReservas || p.reserva;
+            return `
             <tr>
-                <td><strong>#P${String(p.idPagos||p.id).padStart(2,"0")}</strong></td>
-                <td><span class="eb-badge eb-badge-info">#${p.idReservas||p.reserva}</span></td>
-                <td style="font-weight:600;color:#16A34A">${formatMoney(p.monto_pagado||p.monto||0)}</td>
-                <td>${p.metodo_pago||p.metodo||"—"}</td>
-                <td style="color:#94A3B8;font-size:12px">${formatDate(p.fecha_pago||p.fecha)}</td>
+                <td><strong>#P${String(id).padStart(2,"0")}</strong></td>
+                <td><span class="eb-badge eb-badge-info">${idReserva ? "#"+idReserva : "—"}</span></td>
+                <td style="font-weight:600;color:#16A34A">${formatMoney(p.monto_pagado || p.monto || 0)}</td>
+                <td>${p.metodo_pago || p.metodo || "—"}</td>
+                <td style="color:#94A3B8;font-size:12px">${formatDate(p.fecha_pago || p.fecha)}</td>
                 <td>${badgeEstado(p.estado)}</td>
-                <td style="font-family:monospace;font-size:12px;color:#475569">${p.referencia||"—"}</td>
+                <td style="font-family:monospace;font-size:12px;color:#475569">${p.referencia || "—"}</td>
                 <td>
-                    <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="confirmarPago(${p.idPagos||p.id})">✅ Confirmar</button>
+                    ${p.estado !== "Pagado" ? `<button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="confirmarPago(${id})">✅ Confirmar</button>` : `<span style="color:#94A3B8;font-size:12px">Sin acciones</span>`}
                 </td>
             </tr>
-        `).join("");
+        `;
+        }).join("");
     }
 
     function filtrar() {
@@ -192,7 +216,41 @@
             (p.metodo_pago||p.metodo||"").toLowerCase().includes(q)
         );
         if (estado) filtrados = filtrados.filter(p => p.estado === estado);
-        renderTabla(filtrados);
+        pagosVista = filtrados;
+        paginaActual = 1; // toda nueva búsqueda/filtro vuelve a la página 1
+        renderPagina();
+    }
+
+    // Pinta la página actual de pagosVista (10 por página) y genera los botones de paginación
+    function renderPagina() {
+        const totalPaginas = Math.max(1, Math.ceil(pagosVista.length / PAGE_SIZE));
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+        if (paginaActual < 1) paginaActual = 1;
+
+        const inicio = (paginaActual - 1) * PAGE_SIZE;
+        const trozo = pagosVista.slice(inicio, inicio + PAGE_SIZE);
+        renderTabla(trozo);
+
+        const infoDiv = document.getElementById("paginaInfo");
+        if (!pagosVista.length) {
+            infoDiv.textContent = "Sin resultados";
+        } else {
+            const desde = inicio + 1;
+            const hasta = Math.min(inicio + PAGE_SIZE, pagosVista.length);
+            infoDiv.textContent = `Mostrando ${desde}–${hasta} de ${pagosVista.length} pagos`;
+        }
+
+        const cont = document.getElementById("pagBotones");
+        let html = "";
+        for (let p = 1; p <= totalPaginas; p++) {
+            html += `<div class="eb-page-btn${p === paginaActual ? " active" : ""}" onclick="irAPagina(${p})">${p}</div>`;
+        }
+        cont.innerHTML = html;
+    }
+
+    function irAPagina(p) {
+        paginaActual = p;
+        renderPagina();
     }
 
     function badgeEstado(estado) {
