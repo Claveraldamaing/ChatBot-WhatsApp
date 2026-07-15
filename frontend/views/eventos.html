@@ -23,12 +23,32 @@
         </header>
         <div class="eb-content">
 
+            <!-- STATS -->
+            <div class="eb-grid-2">
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DBEAFE">📅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statEventos">—</div>
+                        <div class="eb-stat-label">Total eventos</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">📦</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statPaquetes">—</div>
+                        <div class="eb-stat-label">Total paquetes</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- EVENTOS -->
             <div class="eb-card">
                 <div class="eb-search-bar">
-                    <div style="flex:1">
-                        <div class="eb-card-title">Catálogo de eventos</div>
-                        <div class="eb-card-sub">Tipos de eventos disponibles</div>
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" id="buscadorEventos" placeholder="Buscar evento..." oninput="filtrarEventos()">
                     </div>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalEvento()">+ Nuevo evento</button>
                 </div>
@@ -47,8 +67,11 @@
             <!-- PAQUETES -->
             <div class="eb-card">
                 <div class="eb-search-bar">
-                    <div style="flex:1">
-                        <div class="eb-card-title">Paquetes disponibles</div>
+                    <div class="eb-search-wrap">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input class="eb-search" id="buscadorPaquetes" placeholder="Buscar paquete..." oninput="filtrarPaquetes()">
                     </div>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModalPaquete()">+ Nuevo paquete</button>
                 </div>
@@ -126,70 +149,94 @@
 <script src="../js/sidebar.js"></script>
 <script>
     Auth.require();
+    let todosEventos = [];
+    let todosPaquetes = [];
 
     async function cargarEventos() {
         try {
             const res = await ApiEventos.listar();
-            const lista = (res.data || res || []).reverse();
-            const tbody = document.getElementById("tablaEventos");
-            if (!lista.length) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin eventos</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = lista.map(e => {
-                const id = e.idEventos || e.id;
-                return `
-                <tr>
-                    <td><strong>#${String(id).padStart(3,"0")}</strong></td>
-                    <td style="font-weight:600">${e.nombre || "—"}</td>
-                    <td style="color:#475569;font-size:12px">${e.descripcion || "—"}</td>
-                    <td><span class="eb-badge ${e.estado==='Activo'?'eb-badge-success':'eb-badge-gray'}">${e.estado || "Activo"}</span></td>
-                    <td>
-                        <div style="display:flex;gap:6px">
-                            <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarEvento(${id})">✏️</button>
-                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarEvento(${id})">🗑</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join("");
+            todosEventos = (res.data || res || []).reverse();
+            document.getElementById("statEventos").textContent = todosEventos.length;
+            renderEventos(todosEventos);
         } catch {
+            document.getElementById("statEventos").textContent = "—";
             document.getElementById("tablaEventos").innerHTML =
                 `<tr><td colspan="5" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
         }
     }
 
+    function renderEventos(lista) {
+        const tbody = document.getElementById("tablaEventos");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="eb-empty"><div class="eb-empty-icon">📅</div><div class="eb-empty-text">Sin eventos registrados</div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(e => {
+            const id = e.idEventos || e.id;
+            return `
+            <tr>
+                <td><strong>#${String(id).padStart(3,"0")}</strong></td>
+                <td style="font-weight:600">${e.nombre || "—"}</td>
+                <td style="color:#475569;font-size:12px">${e.descripcion || "—"}</td>
+                <td><span class="eb-badge ${e.estado==='Activo'?'eb-badge-success':'eb-badge-gray'}">${e.estado || "Activo"}</span></td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarEvento(${id})">✏️ Editar</button>
+                        <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarEvento(${id})">🗑</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join("");
+    }
+
+    function filtrarEventos() {
+        const q = (document.getElementById("buscadorEventos").value || "").toLowerCase();
+        const filtrados = todosEventos.filter(e => (e.nombre || "").toLowerCase().includes(q) || (e.descripcion || "").toLowerCase().includes(q));
+        renderEventos(filtrados);
+    }
+
     async function cargarPaquetes() {
         try {
             const res = await ApiPaquetes.listar();
-            const lista = (res.data || res || []).reverse();
-            const tbody = document.getElementById("tablaPaquetes");
-            if (!lista.length) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin paquetes</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = lista.map(p => {
-                const id = p.idPaquetes || p.id;
-                return `
-                <tr>
-                    <td><strong>#P${String(id).padStart(2,"0")}</strong></td>
-                    <td style="font-weight:600">${p.nombre_paquete || p.nombre || "—"}</td>
-                    <td style="color:#475569;font-size:12px">${p.descripcion || "—"}</td>
-                    <td style="font-weight:600;color:#16A34A">${formatMoney(p.precio || 0)}</td>
-                    <td><span class="eb-badge eb-badge-success">${p.estado || "Activo"}</span></td>
-                    <td>
-                        <div style="display:flex;gap:6px">
-                            <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarPaquete(${id})">✏️</button>
-                            <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarPaquete(${id})">🗑</button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join("");
+            todosPaquetes = (res.data || res || []).reverse();
+            document.getElementById("statPaquetes").textContent = todosPaquetes.length;
+            renderPaquetes(todosPaquetes);
         } catch {
+            document.getElementById("statPaquetes").textContent = "—";
             document.getElementById("tablaPaquetes").innerHTML =
                 `<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:20px">❌ Error conectando con el servidor</td></tr>`;
         }
+    }
+
+    function renderPaquetes(lista) {
+        const tbody = document.getElementById("tablaPaquetes");
+        if (!lista.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="eb-empty"><div class="eb-empty-icon">📦</div><div class="eb-empty-text">Sin paquetes registrados</div></td></tr>`;
+            return;
+        }
+        tbody.innerHTML = lista.map(p => {
+            const id = p.idPaquetes || p.id;
+            return `
+            <tr>
+                <td><strong>#P${String(id).padStart(2,"0")}</strong></td>
+                <td style="font-weight:600">${p.nombre_paquete || p.nombre || "—"}</td>
+                <td style="color:#475569;font-size:12px">${p.descripcion || "—"}</td>
+                <td style="font-weight:600;color:#16A34A">${formatMoney(p.precio || 0)}</td>
+                <td><span class="eb-badge eb-badge-success">${p.estado || "Activo"}</span></td>
+                <td>
+                    <div style="display:flex;gap:6px">
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="editarPaquete(${id})">✏️ Editar</button>
+                        <button class="eb-btn eb-btn-danger eb-btn-sm" onclick="eliminarPaquete(${id})">🗑</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join("");
+    }
+
+    function filtrarPaquetes() {
+        const q = (document.getElementById("buscadorPaquetes").value || "").toLowerCase();
+        const filtrados = todosPaquetes.filter(p => (p.nombre_paquete || p.nombre || "").toLowerCase().includes(q) || (p.descripcion || "").toLowerCase().includes(q));
+        renderPaquetes(filtrados);
     }
 
     function abrirModalEvento() { document.getElementById("modalEvento").classList.add("open"); }

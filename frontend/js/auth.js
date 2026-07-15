@@ -55,6 +55,7 @@ const Auth = {
 
     // Cerrar sesión
     logout(mensaje) {
+        if (!mensaje && !confirm("¿Estás seguro de cerrar sesión?")) return;
         localStorage.removeItem(SESSION_KEY);
         clearTimeout(this._inactividadTimer);
         const destino = "../views/login.html" + (mensaje ? `?msg=${encodeURIComponent(mensaje)}` : "");

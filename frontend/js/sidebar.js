@@ -50,8 +50,9 @@ function renderSidebar() {
                         <div class="eb-user-name" id="sidebarNombre">Admin</div>
                         <div class="eb-user-role" id="sidebarRol">admin</div>
                     </div>
-                    <button onclick="Auth.logout()" title="Salir"
-                        style="background:none;border:none;cursor:pointer;font-size:18px;color:#64748B">⏏</button>
+                    <button onclick="Auth.logout()" title="Salir" class="eb-sidebar-logout">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </button>
                 </div>
             </div>
         </aside>`;

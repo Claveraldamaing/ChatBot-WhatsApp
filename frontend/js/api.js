@@ -4,7 +4,7 @@
 //  Base URL: http://127.0.0.1:8000
 // =============================================
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = localStorage.getItem("api_base") || "http://127.0.0.1:8000";
 
 async function apiFetch(endpoint, method = "GET", body = null) {
     const headers = { "Content-Type": "application/json" };
@@ -153,9 +153,17 @@ function showToast(msg, tipo = "info") {
     if (existing) existing.remove();
     const el = document.createElement("div");
     el.className = "eb-toast";
-    el.innerHTML = `<span>${icons[tipo]}</span><span>${msg}</span>`;
+    const spanIcon = document.createElement("span");
+    spanIcon.textContent = icons[tipo] || "";
+    const spanMsg = document.createElement("span");
+    spanMsg.textContent = msg;
+    el.appendChild(spanIcon);
+    el.appendChild(spanMsg);
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3500);
+    setTimeout(() => {
+        el.classList.add("eb-toast--out");
+        setTimeout(() => el.remove(), 250);
+    }, 3500);
 }
 
 function formatMoney(n) {
@@ -163,7 +171,9 @@ function formatMoney(n) {
 }
 function formatDate(d) {
     if (!d) return "—";
-    return new Date(d).toLocaleDateString("es-PE");
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("es-PE");
 }
 function getInitials(name) {
     if (!name) return "??";

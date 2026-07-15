@@ -29,7 +29,7 @@
 
             <!-- STATS -->
             <div class="eb-stats">
-                <div class="eb-stat" style="border-left:4px solid #2563EB">
+                <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DBEAFE">📅</div>
                     <div>
                         <div class="eb-stat-val" style="color:#2563EB" id="statEventos">—</div>
@@ -37,7 +37,7 @@
                         <div class="eb-stat-sub" id="subEventos">Cargando...</div>
                     </div>
                 </div>
-                <div class="eb-stat" style="border-left:4px solid #16A34A">
+                <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DCFCE7">📋</div>
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statReservas">—</div>
@@ -45,7 +45,7 @@
                         <div class="eb-stat-sub" id="subReservas">Cargando...</div>
                     </div>
                 </div>
-                <div class="eb-stat" style="border-left:4px solid #D97706">
+                <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#FEF3C7">👥</div>
                     <div>
                         <div class="eb-stat-val" style="color:#D97706" id="statClientes">—</div>
@@ -53,10 +53,10 @@
                         <div class="eb-stat-sub" id="subClientes">Cargando...</div>
                     </div>
                 </div>
-                <div class="eb-stat" style="border-left:4px solid #7C3AED">
-                    <div class="eb-stat-icon" style="background:#F3E8FF">💰</div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#DCFCE7">💰</div>
                     <div>
-                        <div class="eb-stat-val" style="color:#7C3AED" id="statIngresos">—</div>
+                        <div class="eb-stat-val" style="color:#16A34A" id="statIngresos">—</div>
                         <div class="eb-stat-label">Ingresos totales</div>
                         <div class="eb-stat-sub" id="subIngresos">Cargando...</div>
                     </div>
@@ -64,7 +64,7 @@
             </div>
 
             <!-- RESUMEN RÁPIDO -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+            <div class="eb-grid-3">
                 <!-- DONUT ESTADOS -->
                 <div class="eb-card">
                     <div class="eb-card-header">
@@ -74,8 +74,8 @@
                         </div>
                     </div>
                     <div class="eb-card-body" style="display:flex;align-items:center;gap:16px">
-                        <div id="miniDonut" style="width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--accent) 0% 100%);flex-shrink:0;position:relative">
-                            <div style="position:absolute;inset:20px;background:var(--bg2);border-radius:50%"></div>
+                        <div class="eb-donut" id="miniDonut" style="width:90px;height:90px;flex-shrink:0">
+                            <div style="position:absolute;width:50px;height:50px;background:var(--bg2);border-radius:50%"></div>
                         </div>
                         <div style="font-size:12px">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
@@ -257,7 +257,7 @@
             const ultimas = lista.reverse().slice(0, 5);
             const tbody = document.getElementById("tablaReservas");
             if (!ultimas.length) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin reservas registradas</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5"><div class="eb-empty" style="padding:20px"><div class="eb-empty-icon">📋</div><div class="eb-empty-text">Sin reservas registradas</div></div></td></tr>`;
             } else {
                 tbody.innerHTML = ultimas.map(r => {
                     const idCli   = r.idClientes || r.id_cliente;
@@ -302,7 +302,7 @@
             const div = document.getElementById("listaRecordatorios");
             const colores = { antes_evento: "#25D366", pago_pendiente: "#D97706", post_evento: "#2563EB" };
             if (!pendientes.length) {
-                div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios pendientes</div>`;
+                div.innerHTML = `<div class="eb-empty" style="padding:16px"><div class="eb-empty-icon">🔔</div><div class="eb-empty-text">Sin recordatorios pendientes</div></div>`;
             } else {
                 div.innerHTML = pendientes.map(r => `
                     <div class="eb-reminder">

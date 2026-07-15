@@ -24,7 +24,7 @@
         <div class="eb-content">
 
             <!-- STATS -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <div class="eb-grid-3">
                 <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DBEAFE">👥</div>
                     <div>
@@ -58,13 +58,13 @@
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        <input class="eb-search" placeholder="Nombre o email..." oninput="filtrar(this.value)">
+                        <input class="eb-search" id="buscador" placeholder="Nombre o email..." oninput="filtrar()">
                     </div>
-                    <select class="eb-search" style="max-width:140px" onchange="filtrarRol(this.value)">
+                    <select class="eb-search" style="max-width:140px" id="filtroRol" onchange="filtrar()">
                         <option value="">Todos los roles</option>
-                        <option>admin</option>
-                        <option>operador</option>
-                        <option>cliente</option>
+                        <option value="admin">admin</option>
+                        <option value="operador">operador</option>
+                        <option value="cliente">cliente</option>
                     </select>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo usuario</button>
                 </div>
@@ -93,7 +93,7 @@
                             <div style="font-size:13px;color:#94A3B8" id="sesionEmail">—</div>
                             <div style="margin-top:6px;display:flex;gap:8px">
                                 <span class="eb-badge eb-badge-info" id="sesionRol">—</span>
-                                <span class="eb-badge eb-badge-success">✅ Activo</span>
+                                <span class="eb-badge eb-badge-success" id="sesionEstado">✅ Activo</span>
                             </div>
                         </div>
                         <div style="margin-left:auto">
@@ -145,6 +145,49 @@
     </div>
 </div>
 
+<!-- MODAL EDITAR USUARIO -->
+<div class="eb-modal-overlay" id="modalEditar">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">✏️ Editar usuario</div>
+            <button class="eb-modal-close" onclick="document.getElementById('modalEditar').classList.remove('open')">✕</button>
+        </div>
+        <div class="eb-modal-body">
+            <input type="hidden" id="edit-id">
+            <div class="eb-form-group">
+                <label class="eb-label">Nombre completo</label>
+                <input class="eb-input" id="edit-nombre">
+            </div>
+            <div class="eb-form-group">
+                <label class="eb-label">Email</label>
+                <input class="eb-input" id="edit-email" type="email">
+            </div>
+            <div class="eb-form-row">
+                <div class="eb-form-group">
+                    <label class="eb-label">Rol</label>
+                    <select class="eb-input" id="edit-rol">
+                        <option>admin</option>
+                        <option>operador</option>
+                        <option>cliente</option>
+                    </select>
+                </div>
+                <div class="eb-form-group">
+                    <label class="eb-label">Estado</label>
+                    <select class="eb-input" id="edit-estado">
+                        <option value="activo">Activo</option>
+                        <option value="bloqueado">Bloqueado</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="document.getElementById('modalEditar').classList.remove('open')">Cancelar</button>
+            <button class="eb-btn eb-btn-primary" onclick="actualizarUsuario()">Guardar cambios</button>
+        </div>
+    </div>
+</div>
+
 <script src="../js/api.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/sidebar.js"></script>
@@ -159,6 +202,13 @@
         document.getElementById("sesionNombre").textContent = session.nombre || "—";
         document.getElementById("sesionEmail").textContent = session.email || "—";
         document.getElementById("sesionRol").textContent = session.rol || "—";
+        const estadoBadge = document.getElementById("sesionEstado");
+        if (session.usuario && session.usuario.estado) {
+            const est = session.usuario.estado;
+            if (est === "activo") { estadoBadge.className = "eb-badge eb-badge-success"; estadoBadge.textContent = "✅ Activo"; }
+            else if (est === "bloqueado") { estadoBadge.className = "eb-badge eb-badge-danger"; estadoBadge.textContent = "⛔ Bloqueado"; }
+            else { estadoBadge.className = "eb-badge eb-badge-gray"; estadoBadge.textContent = "⭕ " + est; }
+        }
     }
 
     async function cargarUsuarios() {
@@ -246,16 +296,15 @@
         return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
     }
 
-    function filtrar(q) {
-        const filtrados = todosUsuarios.filter(u =>
-            (u.nombre||"").toLowerCase().includes(q.toLowerCase()) ||
-            (u.email||"").toLowerCase().includes(q.toLowerCase())
-        );
-        renderTabla(filtrados);
-    }
-
-    function filtrarRol(rol) {
-        const filtrados = rol ? todosUsuarios.filter(u => u.rol === rol) : todosUsuarios;
+    function filtrar() {
+        const q = (document.getElementById("buscador").value || "").toLowerCase();
+        const rol = document.getElementById("filtroRol").value;
+        const filtrados = todosUsuarios.filter(u => {
+            const matchText = (u.nombre || "").toLowerCase().includes(q) ||
+                              (u.email || "").toLowerCase().includes(q);
+            const matchRol = !rol || u.rol === rol;
+            return matchText && matchRol;
+        });
         renderTabla(filtrados);
     }
 
@@ -288,7 +337,29 @@
     }
 
     function editarUsuario(id) {
-        showToast(`✏️ Edición de usuario #${id} próximamente`, "info");
+        const user = todosUsuarios.find(u => (u.idUsuario || u.id) === id);
+        if (!user) { showToast("Usuario no encontrado", "error"); return; }
+        document.getElementById("edit-id").value = id;
+        document.getElementById("edit-nombre").value = user.nombre || "";
+        document.getElementById("edit-email").value = user.email || "";
+        document.getElementById("edit-rol").value = user.rol || "cliente";
+        document.getElementById("edit-estado").value = user.estado || "activo";
+        document.getElementById("modalEditar").classList.add("open");
+    }
+
+    async function actualizarUsuario() {
+        const id = document.getElementById("edit-id").value;
+        const nombre = document.getElementById("edit-nombre").value.trim();
+        const email = document.getElementById("edit-email").value.trim();
+        const rol = document.getElementById("edit-rol").value;
+        const estado = document.getElementById("edit-estado").value;
+        if (!nombre || !email) { showToast("⚠️ Nombre y email son requeridos", "warning"); return; }
+        try {
+            await ApiUsuarios.actualizar(id, { nombre, email, rol, estado });
+            showToast("✅ Usuario actualizado", "success");
+            document.getElementById("modalEditar").classList.remove("open");
+            cargarUsuarios();
+        } catch { showToast("❌ Error al actualizar usuario", "error"); }
     }
 
     cargarUsuarios();

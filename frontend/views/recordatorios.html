@@ -62,9 +62,9 @@
                     </div>
                     <select class="eb-search" style="max-width:150px" id="filtroTipo" onchange="filtrar()">
                         <option value="">Todos</option>
-                        <option value="antes_evento">antes_evento</option>
-                        <option value="pago_pendiente">pago_pendiente</option>
-                        <option value="post_evento">post_evento</option>
+                        <option value="antes_evento">Antes del evento</option>
+                        <option value="pago_pendiente">Pago pendiente</option>
+                        <option value="post_evento">Después del evento</option>
                     </select>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo recordatorio</button>
                 </div>
@@ -93,9 +93,9 @@
                 <div class="eb-form-group">
                     <label class="eb-label">Tipo</label>
                     <select class="eb-input" id="rec-tipo">
-                        <option value="antes_evento">antes_evento</option>
-                        <option value="pago_pendiente">pago_pendiente</option>
-                        <option value="post_evento">post_evento</option>
+                        <option value="antes_evento">Antes del evento</option>
+                        <option value="pago_pendiente">Pago pendiente</option>
+                        <option value="post_evento">Después del evento</option>
                     </select>
                 </div>
                 <div class="eb-form-group">
@@ -152,16 +152,18 @@
     }
 
     function badgeEstado(estado) {
-        if (estado === "pendiente") return `<span style="color:#D97706;font-weight:600">⏳ pendiente</span>`;
-        if (estado === "enviado")   return `<span style="color:#16A34A;font-weight:600">✅ enviado</span>`;
-        if (estado === "cancelado") return `<span style="color:#DC2626;font-weight:600">✖ cancelado</span>`;
-        return `<span style="color:#94A3B8;font-weight:600">${estado || "—"}</span>`;
+        const map = {
+            "pendiente": `<span class="eb-badge eb-badge-warning">⏳ pendiente</span>`,
+            "enviado":   `<span class="eb-badge eb-badge-success">✅ enviado</span>`,
+            "cancelado": `<span class="eb-badge eb-badge-danger">✖ cancelado</span>`,
+        };
+        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado || "—"}</span>`;
     }
 
     function renderLista(lista) {
         const div = document.getElementById("listaRecordatorios");
         if (!lista.length) {
-            div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios</div>`;
+            div.innerHTML = `<div class="eb-empty"><div class="eb-empty-icon">🔔</div><div class="eb-empty-text">Sin recordatorios</div><div class="eb-empty-sub">Crea el primer recordatorio con el botón de arriba</div></div>`;
             return;
         }
         const colores = { antes_evento: "#25D366", pago_pendiente: "#D97706", post_evento: "#2563EB" };

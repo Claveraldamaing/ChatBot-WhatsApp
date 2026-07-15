@@ -25,10 +25,7 @@
         </div>
 
         <div class="eb-form-group">
-            <label class="eb-label">
-                Correo electrónico
-                <span>USUARIOS.email</span>
-            </label>
+            <label class="eb-label">Correo electrónico</label>
             <div style="position:relative">
                 <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -41,10 +38,7 @@
         </div>
 
         <div class="eb-form-group">
-            <label class="eb-label">
-                Contraseña
-                <span>USUARIOS.password_hash</span>
-            </label>
+            <label class="eb-label">Contraseña</label>
             <div style="position:relative">
                 <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:#94A3B8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -56,12 +50,12 @@
             </div>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569;cursor:pointer">
-                <input type="checkbox" id="recordar" style="width:15px;height:15px">
+        <div class="eb-login-row">
+            <label class="eb-label eb-login-remember">
+                <input type="checkbox" id="recordar">
                 Recordar sesión
             </label>
-            <a href="#" style="font-size:13px;color:#2563EB">¿Olvidaste tu contraseña?</a>
+            <a href="login.html" class="eb-login-forgot">¿Olvidaste tu contraseña?</a>
         </div>
 
         <button id="btnLogin" class="eb-btn eb-btn-primary"
@@ -70,7 +64,7 @@
             Ingresar al sistema →
         </button>
 
-        <div style="margin-top:16px;padding:12px;background:#F8FAFC;border-radius:8px;font-size:12px;color:#64748B">
+        <div class="eb-login-demo">
             <strong>Demo:</strong> admin@eventbot.pe / admin123<br>
             <strong>Roles:</strong> admin | operador | cliente
         </div>

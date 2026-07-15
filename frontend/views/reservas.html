@@ -24,7 +24,7 @@
         <div class="eb-content">
 
             <!-- STATS -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <div class="eb-grid-3">
                 <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DBEAFE">📋</div>
                     <div>
@@ -52,7 +52,7 @@
             </div>
 
             <!-- TABLA RESERVAS -->
-            <div class="eb-card" style="margin-bottom:20px">
+            <div class="eb-card">
                 <div class="eb-search-bar">
                     <div class="eb-search-wrap">
                         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -66,7 +66,6 @@
                         <option value="pendiente">Pendiente</option>
                         <option value="cancelada">Cancelada</option>
                     </select>
-                    <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nueva reserva</button>
                 </div>
                 <div class="eb-table-wrap">
@@ -106,6 +105,20 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- MODAL VER RESERVA -->
+<div class="eb-modal-overlay" id="modalVerRes">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">📋 Detalle de reserva</div>
+            <button class="eb-modal-close" onclick="document.getElementById('modalVerRes').classList.remove('open')">✕</button>
+        </div>
+        <div class="eb-modal-body" id="modalVerResBody"></div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="document.getElementById('modalVerRes').classList.remove('open')">Cerrar</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL NUEVA RESERVA -->
@@ -161,7 +174,7 @@
     let clientesMap = {};
     let reservasVista = [];   // lista actualmente filtrada (antes de paginar)
     let paginaActual = 1;
-    const PAGE_SIZE = 5;
+    const PAGE_SIZE = 10;
 
     async function cargarClientesMap() {
         try {
@@ -249,7 +262,7 @@
     function renderTabla(lista) {
         const tbody = document.getElementById("tablaReservas");
         if (!lista.length) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:20px">Sin reservas registradas</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8"><div class="eb-empty"><div class="eb-empty-icon">📋</div><div class="eb-empty-text">Sin reservas registradas</div><div class="eb-empty-sub">Crea la primera reserva con el botón de arriba</div></div></td></tr>`;
             return;
         }
         tbody.innerHTML = lista.map(r => {
@@ -281,7 +294,7 @@
             const nombre = r.clienteNombre || r.nombre_cliente || clientesMap[idCli] || "";
             return nombre.toLowerCase().includes(q);
         });
-        if (estado) filtrados = filtrados.filter(r => r.estado === estado);
+        if (estado) filtrados = filtrados.filter(r => (r.estado || "").toLowerCase() === estado.toLowerCase());
         reservasVista = filtrados;
         paginaActual = 1; // toda nueva búsqueda/filtro vuelve a la página 1
         renderPagina();
@@ -334,8 +347,48 @@
     function abrirModal() { document.getElementById("modalReserva").classList.add("open"); }
     function cerrarModal() { document.getElementById("modalReserva").classList.remove("open"); }
 
-    function verReserva(id) {
-        showToast(`ℹ️ Ver detalle reserva #${id}`, "info");
+    async function verReserva(id) {
+        const reserva = todasReservas.find(r => (r.idReservas || r.id) === id);
+        if (!reserva) { showToast("Reserva no encontrada", "error"); return; }
+        const idCli = reserva.idClientes || reserva.id_cliente;
+        const nombre = reserva.clienteNombre || reserva.nombre_cliente || clientesMap[idCli] || "—";
+        const body = document.getElementById("modalVerResBody");
+        body.innerHTML = `
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+                <div class="eb-stat-icon" style="background:var(--accent-soft);width:48px;height:48px;border-radius:12px;font-size:20px">📋</div>
+                <div>
+                    <div style="font-size:16px;font-weight:700">Reserva #${reserva.idReservas || reserva.id}</div>
+                    <div style="font-size:13px;color:#94A3B8">${badgeEstado(reserva.estado)}</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div>
+                    <div class="eb-label">Cliente</div>
+                    <div style="font-size:14px;font-weight:500">${nombre}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Estado</div>
+                    <div style="font-size:14px;font-weight:500">${badgeEstado(reserva.estado)}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Fecha de reserva</div>
+                    <div style="font-size:14px;font-weight:500">${formatDate(reserva.fecha_reserva)}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Fecha del evento</div>
+                    <div style="font-size:14px;font-weight:500">${formatDate(reserva.fecha_evento)}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Hora</div>
+                    <div style="font-size:14px;font-weight:500">${reserva.hora_evento || reserva.hora || "—"}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Total</div>
+                    <div style="font-size:14px;font-weight:500;color:#16A34A">${formatMoney(reserva.total_reserva || reserva.total || 0)}</div>
+                </div>
+            </div>
+        `;
+        document.getElementById("modalVerRes").classList.add("open");
     }
 
     async function finalizarPago(id) {

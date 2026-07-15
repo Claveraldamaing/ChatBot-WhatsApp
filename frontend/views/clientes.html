@@ -30,7 +30,7 @@
             <div id="msgBox" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:500"></div>
 
             <!-- STATS -->
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
+            <div class="eb-grid-2">
                 <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DBEAFE">👥</div>
                     <div>
@@ -58,7 +58,6 @@
                         </svg>
                         <input class="eb-search" id="buscador" placeholder="Nombre o email..." oninput="filtrar()">
                     </div>
-                    <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo cliente</button>
                 </div>
 
@@ -119,6 +118,21 @@
     </div>
 </div>
 
+<!-- MODAL VER CLIENTE -->
+<div class="eb-modal-overlay" id="modalVer">
+    <div class="eb-modal">
+        <div class="eb-modal-header">
+            <div class="eb-modal-title">👤 Detalle del cliente</div>
+            <button class="eb-modal-close" onclick="document.getElementById('modalVer').classList.remove('open')">✕</button>
+        </div>
+        <div class="eb-modal-body" id="modalVerBody">
+        </div>
+        <div class="eb-modal-footer">
+            <button class="eb-btn eb-btn-secondary" onclick="document.getElementById('modalVer').classList.remove('open')">Cerrar</button>
+        </div>
+    </div>
+</div>
+
 <script src="../js/api.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/sidebar.js"></script>
@@ -166,7 +180,7 @@
     function renderTabla(lista) {
         const tbody = document.getElementById("tablaClientes");
         if (!lista.length) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin clientes registrados</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6"><div class="eb-empty"><div class="eb-empty-icon">👥</div><div class="eb-empty-text">Sin clientes registrados</div><div class="eb-empty-sub">Crea el primer cliente con el botón de arriba</div></div></td></tr>`;
             return;
         }
         tbody.innerHTML = lista.map(c => `
@@ -266,8 +280,34 @@
         }
     }
 
-    function verCliente(id) {
-        showToast(`ℹ️ Ver detalle cliente #${id}`, "info");
+    async function verCliente(id) {
+        const cliente = todosClientes.find(c => (c.idClientes || c.id) === id);
+        if (!cliente) { showToast("Cliente no encontrado", "error"); return; }
+        const body = document.getElementById("modalVerBody");
+        body.innerHTML = `
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+                <div class="eb-initials" style="width:48px;height:48px;font-size:18px">${getInitials(cliente.nombre)}</div>
+                <div>
+                    <div style="font-size:16px;font-weight:700">${cliente.nombre || "Sin nombre"}</div>
+                    <div style="font-size:13px;color:#94A3B8">ID #${cliente.idClientes || cliente.id}</div>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div>
+                    <div class="eb-label">Teléfono</div>
+                    <div style="font-size:14px;font-weight:500">${cliente.telefono || "—"}</div>
+                </div>
+                <div>
+                    <div class="eb-label">Email</div>
+                    <div style="font-size:14px;font-weight:500">${cliente.email || "—"}</div>
+                </div>
+                <div style="grid-column:1/-1">
+                    <div class="eb-label">Fecha de registro</div>
+                    <div style="font-size:14px;font-weight:500">${formatDate(cliente.fecha_registro)}</div>
+                </div>
+            </div>
+        `;
+        document.getElementById("modalVer").classList.add("open");
     }
 
     cargarClientes();

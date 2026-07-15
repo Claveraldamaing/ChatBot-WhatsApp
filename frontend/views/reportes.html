@@ -17,8 +17,6 @@
                 <p>Resumen de reservas, pagos y clientes</p>
             </div>
             <div class="eb-header-right">
-                <button class="eb-btn eb-btn-secondary eb-btn-sm">📄 PDF</button>
-                <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="exportarCSV()">📊 Excel</button>
                 <span id="apiStatus" class="api-status offline"><span class="dot"></span> Verificando...</span>
                 <div class="eb-avatar" id="headerAvatar">AD</div>
             </div>
@@ -31,9 +29,10 @@
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
                         <span style="font-size:13px;font-weight:600">Período:</span>
                         <input class="eb-input" type="date" id="fechaInicio" value="2026-01-01" style="max-width:150px">
-                        <span style="color:#94A3B8">→</span>
+                        <span class="eb-separator">→</span>
                         <input class="eb-input" type="date" id="fechaFin" style="max-width:150px">
                         <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="cargarReportes()">Aplicar</button>
+                        <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="exportarCSV()" style="margin-left:auto">📊 Exportar CSV</button>
                     </div>
                 </div>
             </div>
@@ -284,8 +283,38 @@
     }
 
     function exportarCSV() {
-        showToast("📥 Exportando datos...", "info");
-        setTimeout(() => showToast("✅ Reporte exportado", "success"), 1500);
+        try {
+            const rows = [["ID","Cliente","Fecha Reserva","Fecha Evento","Hora","Estado","Total"]];
+            const reservas = document.querySelectorAll("#tablaRanking tr");
+            const nombreMap = {};
+            const resRows = [];
+
+            ApiReservas.listar().then(res => {
+                const lista = res.data || res || [];
+                lista.forEach(r => {
+                    const id = r.idReservas || r.id || "";
+                    const cliente = r.clienteNombre || r.nombre_cliente || "";
+                    const fRes = formatDate(r.fecha_reserva);
+                    const fEvt = formatDate(r.fecha_evento);
+                    const hora = r.hora_evento || r.hora || "";
+                    const estado = r.estado || "";
+                    const total = r.total_reserva || r.total || 0;
+                    rows.push([id, cliente, fRes, fEvt, hora, estado, total]);
+                });
+
+                const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
+                const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "reporte_eventbot_" + new Date().toISOString().split("T")[0] + ".csv";
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast("✅ CSV exportado correctamente", "success");
+            }).catch(() => showToast("❌ Error al exportar", "error"));
+        } catch {
+            showToast("❌ Error al exportar", "error");
+        }
     }
 
     cargarReportes();
