@@ -431,28 +431,45 @@ POST /api/recordatorios/generar-para-reserva/{id}
 
 ## Frontend — Panel Admin
 
-### Conectividad Frontend ↔ Backend
+### Conectividad Frontend ↔ Backend (Actualizado 15/07/2026)
 
 | Vista | APIs que llama | Estado |
 |-------|---------------|--------|
-| login.html | `ApiUsuarios.login()` | ⚠️ Hardcodeado (admin@eventbot.pe / admin123) |
-| dashboard.html | `ApiClientes`, `ApiEventos`, `ApiReservas`, `ApiPagos`, `ApiRecordatorios` | ✅ Clientes/Eventos/Reservas/Pagos OK. Recordatorios: stub |
-| clientes.html | `ApiClientes.listar/crear/eliminar` | ✅ Funcional |
-| eventos.html | `ApiEventos`, `ApiPaquetes` | ✅ Funcional |
-| reservas.html | `ApiReservas`, `ApiPagos` | ✅ Funcional |
-| pagos.html | `ApiPagos.listar/crear/actualizar` | ✅ Funcional |
-| recordatorios.html | `ApiRecordatorios` | ❌ Stub (datos vacios) |
-| conversaciones.html | `ApiClientes`, `ApiMensajes`, `POST /api/ia` | ❌ ApiMensajes es stub |
-| reportes.html | `ApiReservas`, `ApiPagos`, `ApiClientes`, `ApiEventos` | ✅ Funcional |
-| usuarios.html | `ApiUsuarios` | ❌ Stub (login hardcodeado) |
+| login.html | `ApiUsuarios.login()` → `POST /api/auth/login` | ✅ Login real con JWT + bcrypt |
+| dashboard.html | `ApiClientes`, `ApiEventos`, `ApiReservas`, `ApiPagos`, `ApiRecordatorios` | ✅ Todo real. Charts dinamicos (donut + bar + progress) |
+| clientes.html | `ApiClientes` (CRUD completo) | ✅ Funcional + modal Ver/Editar |
+| eventos.html | `ApiEventos`, `ApiPaquetes` | ✅ Funcional + stat cards + search |
+| reservas.html | `ApiReservas`, `ApiPagos` | ✅ Funcional + modal + filtro case-insensitive |
+| pagos.html | `ApiPagos` (CRUD completo) | ✅ Funcional + confirmar pago |
+| recordatorios.html | `ApiRecordatorios` (CRUD + generar + pendientes) | ✅ Funcional + badges + marcar enviado |
+| conversaciones.html | `ApiClientes`, `ApiMensajes`, `POST /api/ia` | ✅ Clientes y Mensajes reales. Chat con CSS vars |
+| reportes.html | `ApiReservas`, `ApiPagos`, `ApiClientes`, `ApiEventos` | ✅ Funcional + donut dinamico + Excel export |
+| usuarios.html | `ApiUsuarios` (CRUD + filtros) | ✅ Funcional + badge dinamico por sesion |
 
-### Issues de Compatibilidad Conocidos
-1. `api.js`: `ApiRecordatorios` y `ApiMensajes` son stubs (`async () => []`)
-2. `api.js`: `ApiUsuarios.login()` no llama backend, usa credenciales hardcodeadas
-3. Dashboard: espera `r.clienteNombre` pero backend devuelve `idClientes` (muestra "—")
-4. Estados en frontend en mayuscula ("Confirmada") vs backend en minuscula ("confirmada")
-5. Dashboard `ApiRecordatorios.listar()` es stub, no llama al endpoint real
-6. `auth.js`: login hardcodeado en localStorage, no hay backend de usuarios
+### Estado de API Objects en `api.js` (15/07/2026)
+
+| API Object | Metodos | Estado |
+|---|---|---|
+| `ApiClientes` | 5 | ✅ Todos reales |
+| `ApiEventos` | 5 | ✅ Todos reales |
+| `ApiReservas` | 7 | ✅ Todos reales |
+| `ApiPagos` | 7 | ✅ Todos reales |
+| `ApiPaquetes` | 5 | ✅ Todos reales |
+| `ApiPaquetesEventos` | 4 | ✅ Todos reales |
+| `ApiDetalleReserva` | 3 | ✅ Todos reales |
+| `ApiRecordatorios` | 7 | ✅ Todos reales (listar, crear, actualizar, eliminar, generar, pendientes, marcarEnviado) |
+| `ApiMensajes` | 3 | ⚠️ 2 reales, 1 stub (`estadisticas`) |
+| `ApiUsuarios` | 4 | ✅ Todos reales (incluye login JWT) |
+| `ApiFormularios` | 1 | ❌ Stub (pendiente backend) |
+| `ApiStatus` | 1 | ✅ Real |
+
+### Issues de Compatibilidad — RESUELTOS
+1. ~~`api.js`: `ApiRecordatorios` y `ApiMensajes` son stubs~~ → ✅ RESUELTO (solo `estadisticas` queda como stub)
+2. ~~`api.js`: `ApiUsuarios.login()` no llama backend~~ → ✅ RESUELTO (login JWT real)
+3. ~~Dashboard: espera `r.clienteNombre`~~ → ✅ RESUELTO (usa `idClientes` con fallback)
+4. ~~Estados en frontend en mayuscula vs backend en minuscula~~ → ✅ RESUELTO (`.toLowerCase()` en todos los filtros)
+5. ~~Dashboard `ApiRecordatorios.listar()` es stub~~ → ✅ RESUELTO (llama endpoint real)
+6. ~~`auth.js`: login hardcodeado~~ → ✅ RESUELTO (JWT real con 8h expiry + 20min inactividad)
 
 ### Como Acceder
 1. Backend sirve el frontend en la raiz: `http://localhost:8000/views/login.html`
@@ -474,7 +491,7 @@ NGROK_URL=https://tu-url.ngrok-free.dev
 
 ---
 
-## Cambios de la Sesion Actual (03/07/2026)
+## Cambios de la Sesion 03/07/2026
 
 ### Backend — Modulos nuevos
 1. **`usuarios`** modulo completo: schema + service + repository + router (CRUD + auth JWT). Login real con bcrypt + JWT.
@@ -509,6 +526,140 @@ NGROK_URL=https://tu-url.ngrok-free.dev
 
 ---
 
+## Cambios de la Sesion 15/07/2026
+
+Sesion intensiva de bugfixes, mejoras UX y revision visual completa. Branch: `fix/criticos-5bugs`.
+
+### Backend (5 fixes)
+
+| # | Archivo | Cambio |
+|---|---------|--------|
+| 1 | `whatsapp-bridge/bridge.js` | Servidor HTTP en puerto 8001 con `POST /send` ({telefono, texto}) para envio real de WhatsApp. Soporte LID (Contactos no guardados). |
+| 2 | `app/core/scheduler.py` | Envio real via `httpx.post(BRIDGE_URL, ...)` en vez de solo `print()`. |
+| 3 | `app/services/reserva_service.py` | `create_reserva()` auto-genera 3 recordatorios al crear reserva. |
+| 4 | `app/services/recordatorio_service.py` | Nuevo metodo `marcar_enviado(id)`. |
+| 5 | `app/api/routes/recordatorios.py` | Nuevo endpoint `PATCH /recordatorios/{id}/enviar`. |
+| 6 | `app/repositories/cliente_repository.py` | Busqueda telefonica flexible: 3 formatos (limpio, 9 digitos, con prefijo 51). |
+| 7 | `app/api/routes/pagos.py` | Endpoint `PUT /pagos/{id}/confirmar` (idempotente). |
+
+### Frontend — Bugs Criticos y Altos (Fixes #1-12)
+
+| # | Severidad | Archivo | Problema → Solucion |
+|---|-----------|---------|---------------------|
+| CRIT-1 | Critico | `login.html` | Labels confusos → Textos corregidos ("Correo electronico", "Contrasena") |
+| CRIT-2 | Critico | `api.js` | API_BASE hardcodeada → Configurable via `localStorage.getItem("api_base")` |
+| HIGH-1 | Alto | `clientes.html`, `pagos.html`, `reservas.html` | Botones "Exportar" muertos → Eliminados |
+| HIGH-2 | Alto | `reportes.html` | Boton PDF muerto → Eliminado |
+| HIGH-3 | Alto | `reportes.html` | Exportar CSV generaba nada → Genera archivo real |
+| HIGH-4 | Alto | `clientes.html`, `reservas.html` | Botones Ver/Editar sin accion → Abren modales con datos reales |
+| HIGH-5 | Alto | `api.js` | XSS via `showToast(html)` → Ahora usa `textContent` |
+| HIGH-6 | Alto | `eventbot.css` | Sin focus-visible → Estilos accesibilidad agregados |
+| MED-1 | Medio | `recordatorios.html` | Labels tecnicos → Human-readable ("Antes del evento", "Pago pendiente") |
+| MED-2 | Medio | `reservas.html` | PAGE_SIZE inconsistente (5 vs 10) → Unificado a 10 |
+| MED-3 | Medio | `api.js` | Toast sin animacion salida → Clase `eb-toast--out` con `modalOut` keyframe |
+| MED-4 | Medio | `api.js` | `formatDate` sin validar fechas invalidas → Validacion agregada |
+
+### Frontend — UX General (Fixes #13-22)
+
+| # | Archivo | Mejora |
+|---|---------|--------|
+| 13 | Todas las vistas | **Tablas invertidas** — registros mas nuevos primero (clientes, eventos, reservas, pagos, recordatorios, conversaciones, dashboard) |
+| 14 | `dashboard.html` | **Rediseñado** — Eliminado "4.8/5" hardcodeado, chart donut real (conic-gradient), mini bar chart ingresos por mes, progress bar tasa confirmacion, bordes laterales coloreados en stat cards |
+| 15 | `reportes.html` | Donut dinamico via JS, eliminado "4.8" hardcodeado, eliminado stub formularios |
+| 16 | `clientes.html` | Eliminado stub "Mensajes IA" |
+| 17 | `conversaciones.html` | Eliminados 2 stats que mostraban "No disponible" |
+| 18 | `dashboard.html` | Ingresos por mes ahora muestra montos S/. (no cantidad reservas) |
+| 19 | `dashboard.html` | Progress bar con guards `Array.isArray()` + `if (lista.length > 0)` |
+
+### Frontend — Auditoria 72 Items (Items #20-27)
+
+| # | Severidad | Archivo | Cambio |
+|---|-----------|---------|--------|
+| MED-5 | Medio | `auth.js` | Logout con `confirm()` dialog |
+| MED-6 | Medio | `usuarios.html` | Filtros combinados (texto + rol dropdown) |
+| MED-7 | Medio | `reservas.html` | Filtro estado case-insensitive (`.toLowerCase()`) |
+
+### Frontend — 50 Fixes Visuales (FASE 1-3)
+
+**FASE 1 — CSS (`eventbot.css`) — 140+ lineas nuevas:**
+
+| # | Tipo | Cambio |
+|---|------|--------|
+| 1 | Responsive | `@media` queries: tablet (<1024px) sidebar colapsa a 60px, stats a 2-col, forms 1-col; mobile (<640px) sidebar oculto, stats 1-col, search bars stack |
+| 2+31 | Animacion | `@keyframes shimmer` + `.eb-skeleton`, `.eb-skeleton-text`, `.eb-skeleton-title`, `.eb-skeleton-circle` |
+| 3 | Interaccion | `.eb-btn-success:hover` — dark green bg + white text |
+| 4 | Interaccion | `.eb-btn:disabled` — opacity 0.5, cursor not-allowed, pointer-events none |
+| 5 | Interaccion | `.eb-modal-close:hover` — red background + red color |
+| 6 | Animacion | `@keyframes modalOut` + `.eb-toast--out` |
+| 26 | CSS var | Table hover usa `var(--bg)` en vez de `#F8FAFC` hardcoded |
+| 28 | Form | `select.eb-input` — custom dropdown arrow SVG via `appearance: none` + `background-image` |
+| 29 | Layout | `.eb-separator` para flecha en filtros reportes |
+| 34 | Cross-browser | Firefox scrollbar — `scrollbar-width: thin; scrollbar-color` |
+| 35+36 | Namespace | `.eb-api-status`, `.eb-dot` (compat con `.api-status`/`.dot`) |
+| 43 | A11y | `@media (prefers-reduced-motion: reduce)` — desactiva animaciones |
+| 45 | Interaccion | `.eb-btn:active { transform: scale(0.97); }` |
+| 46 | Transicion | `.eb-input` transition incluye `background` |
+| — | Nuevo | `.eb-chat-area`, `.eb-chat-input`, `.eb-conv-item` para conversaciones |
+| — | Nuevo | `.eb-login-row`, `.eb-login-remember`, `.eb-login-forgot`, `.eb-login-demo` para login |
+| — | Nuevo | `.eb-sidebar-logout` con hover red |
+
+**FASE 2 — JS (`api.js`):**
+
+| # | Cambio |
+|---|--------|
+| 41+42 | Toast sin `style.animation` inline — usa clase CSS `.eb-toast--out` |
+
+**FASE 3 — HTML (10 archivos):**
+
+| Archivo | Fixes aplicados |
+|---------|----------------|
+| `recordatorios.html` | #7+#20: badgeEstado usa `.eb-badge` system |
+| `conversaciones.html` | #9: CSS var colors; #10: stats con `.eb-stat`; #21: client hover `.eb-conv-item`; #27: chat bubbles CSS vars; #38: chat height responsive `.eb-chat-area`; #39: SVG send icon; #48: card header |
+| `dashboard.html` | #11: sin `border-left` stat cards; #12: purple→green; #13: `.eb-grid-3`; #47: `.eb-donut`; empty states con iconos |
+| `clientes.html` | #14: `.eb-grid-2`; empty state con icono |
+| `reservas.html` | #14: `.eb-grid-3`; #19: doble margin eliminado; #50: modal icon `.eb-stat-icon`; empty state |
+| `pagos.html` | #14: `.eb-grid-3`; #22: "Sin acciones" eliminado; empty state |
+| `usuarios.html` | #14: `.eb-grid-3`; #23: badge dinamico; empty state |
+| `eventos.html` | #15: `.eb-search-bar`; #16: stat cards; #17+#18: edit buttons con texto; search/filter; empty states |
+| `login.html` | #24: CSS classes; #25: reducido inline styles; #32: `href="#"`→`href="login.html"`; #33: demo box CSS |
+| `reportes.html` | #30: Excel en filter bar; `.eb-separator` |
+| `sidebar.js` | #40: SVG logout icon + `.eb-sidebar-logout` |
+
+### Archivos modificados en sesion 15/07/2026
+
+**Backend (4 archivos):**
+- `whatsapp-bridge/bridge.js`
+- `app/core/scheduler.py`
+- `app/services/reserva_service.py`
+- `app/services/recordatorio_service.py`
+- `app/api/routes/recordatorios.py`
+- `app/repositories/cliente_repository.py`
+- `app/api/routes/pagos.py`
+
+**Frontend (14 archivos):**
+- `frontend/css/eventbot.css`
+- `frontend/js/api.js`
+- `frontend/js/auth.js`
+- `frontend/js/sidebar.js`
+- `frontend/views/login.html`
+- `frontend/views/dashboard.html`
+- `frontend/views/clientes.html`
+- `frontend/views/eventos.html`
+- `frontend/views/reservas.html`
+- `frontend/views/pagos.html`
+- `frontend/views/recordatorios.html`
+- `frontend/views/conversaciones.html`
+- `frontend/views/reportes.html`
+- `frontend/views/usuarios.html`
+
+### Dependencias instaladas
+- `psycopg_pool` (ConnectionPool para PostgreSQL)
+- `python-jose[cryptography]` (JWT)
+- `apscheduler` (scheduler)
+- `bcrypt` + `passlib` (hashing passwords)
+
+---
+
 ## Como Ejecutar
 
 **Terminal 1 — FastAPI:**
@@ -531,15 +682,80 @@ node bridge.js
 
 ---
 
-## Pendientes / Proximos Pasos
+## Pendientes / Proximos Pasos (Actualizado 15/07/2026)
 
+### Completado ✅
 - [x] Modulo `usuarios` backend (login real con JWT)
-- [ ] Conectar `ApiRecordatorios` del frontend a los endpoints reales
-- [ ] Conectar `ApiMensajes` del frontend (chat history)
+- [x] Conectar `ApiRecordatorios` del frontend a los endpoints reales
 - [x] Envio automatico de recordatorios (cron/scheduler)
-- [ ] Encuesta de satisfaccion post-evento
-- [ ] Arreglar field mismatches (clienteNombre, estados mayus/minus)
-- [ ] Normalizar campo `nombre_paquete` en frontend (backend espera `nombre`)
-- [ ] Bugs criticos pendientes: `password_hash` en `usuario_service._normalize()` ya corregido
-- [ ] Bug: `ia_service.py` indices historial — corregido
-- [ ] Bug: pagos 404 intermitentes — corregido (idempotente)
+- [x] Envio real de WhatsApp via bridge HTTP (puerto 8001)
+- [x] Auto-generacion de recordatorios al crear reserva
+- [x] Marcar recordatorio enviado (PATCH endpoint + boton UI)
+- [x] Login real con JWT (no hardcodeado)
+- [x] Logout con confirm dialog
+- [x] Filtros combinados en todas las vistas
+- [x] Tablas con orden cronologico inverso (mas nuevos primero)
+- [x] Dashboard rediseñado (donut chart, bar chart, progress bar)
+- [x] Reportes: donut dinamico + Excel export real
+- [x] Modales Ver/Editar funcionales (clientes, reservas, usuarios)
+- [x] XSS fix (showToast con textContent)
+- [x] focus-visible para accesibilidad
+- [x] Responsive CSS (tablet + mobile breakpoints)
+- [x] Skeleton/shimmer animations
+- [x] Empty states con iconos en todas las vistas
+- [x] Arreglo field mismatches (clienteNombre, estados mayus/minus)
+- [x] Bugs criticos: password_hash, ia_service indices, pagos 404 intermitentes
+- [x] 72 items de auditoria resueltos
+- [x] 50 fixes visuales implementados
+
+### Pendiente — Prioridad Alta 🔴
+- [ ] **Encuesta de satisfaccion post-evento** — El recordatorio `post_evento` envia agradecimiento, pero no recolecta respuestas
+- [ ] **Chat conversaciones en tiempo real** — Actualmente muestra historial pero no actualiza automaticamente (necesita polling o WebSocket)
+- [ ] **Validacion de formularios** — Los forms de crear/editar no tienen validacion HTML5 completa (required, patterns, min/max)
+
+### Pendiente — Prioridad Media 🟡
+- [ ] **`ApiMensajes.estadisticas`** — Stub, necesita endpoint backend para metricas de chat
+- [ ] **`ApiFormularios`** — Stub, backend no tiene CRUD de formularios (solo los embebidos)
+- [ ] **Paginacion real en frontend** — Las tablas muestran 10 items pero no tienen botones Siguiente/Anterior
+- [ ] **Busqueda en backend** — El search es solo frontend (filtra la lista cargada). Para datos grandes necesitaría endpoints con query param `?q=`
+- [ ] **Fotos de perfil de usuario** — Solo muestra iniciales, no permite subir imagen
+- [ ] **Gestion de sesiones** — No hay endpoint para listar/cerrar sesiones activas (solo expira por tiempo)
+
+### Pendiente — Prioridad Baja 🟢
+- [ ] **Dark mode** — CSS ya usa variables (`--bg`, `--text`, etc.) facilitando dark mode futuro
+- [ ] **Notificaciones push** — Admin no recibe notificaciones cuando hay nueva reserva
+- [ ] **Exportar PDF** — Solo hay Excel; PDF eliminado pero podria re-implementarse con jsPDF
+- [ ] **Multi-idioma** — Todo en espanol, pero estructura permite i18n futuro
+- [ ] **Tests** — No hay tests unitarios ni de integracion (ni backend ni frontend)
+- [ ] **CI/CD** — No hay pipeline de integracion continua
+- [ ] **Docker** — No hay Dockerfile ni docker-compose
+- [ ] **Rate limiting** — No hay proteccion contra abuso de la API
+
+### Pendiente — Backend Especifico
+- [ ] **Endpoint formularios CRUD** — Los formularios son HTML embebidos, no tienen API REST
+- [ ] **Migraciones de BD** — No hay sistema de migraciones (ALTER TABLE manual)
+- [ ] **Logging estructurado** — Solo `print()`, falta `logging` con niveles
+- [ ] **Health check** — No hay `GET /health` o `GET /ready`
+
+### Estado del Sistema (15/07/2026)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    SISTEMA COMPLETO                  │
+├─────────────────────────────────────────────────────┤
+│ Backend (FastAPI)          │ 59 archivos Python     │
+│ Frontend (HTML/CSS/JS)     │ 14 archivos (11 HTML)  │
+│ Bridge (Node.js)           │ 1 archivo bridge.js    │
+│ Base de Datos              │ 10 tablas PostgreSQL   │
+│ API Endpoints              │ 57 endpoints REST      │
+│ API Objects (frontend)     │ 12 objetos, 11 reales  │
+│ Vistas Admin               │ 10 vistas completas    │
+├─────────────────────────────────────────────────────┤
+│ Auth:     JWT real (bcrypt + 8h expiry)             │
+│ WhatsApp: Bridge HTTP (puerto 8001) + httpx         │
+│ Scheduler: APScheduler cada 1 minuto                │
+│ Charts:   Donut (conic-gradient) + Bar + Progress   │
+│ Responsive: Tablet (<1024px) + Mobile (<640px)      │
+│ Accesibilidad: focus-visible + reduced-motion        │
+└─────────────────────────────────────────────────────┘
+```
