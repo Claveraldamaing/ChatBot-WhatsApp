@@ -62,9 +62,9 @@
                     </div>
                     <select class="eb-search" style="max-width:150px" id="filtroTipo" onchange="filtrar()">
                         <option value="">Todos</option>
-                        <option>WhatsApp</option>
-                        <option>encuesta</option>
-                        <option>pago</option>
+                        <option value="antes_evento">antes_evento</option>
+                        <option value="pago_pendiente">pago_pendiente</option>
+                        <option value="post_evento">post_evento</option>
                     </select>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo recordatorio</button>
                 </div>
@@ -93,9 +93,9 @@
                 <div class="eb-form-group">
                     <label class="eb-label">Tipo</label>
                     <select class="eb-input" id="rec-tipo">
-                        <option>WhatsApp</option>
-                        <option>encuesta</option>
-                        <option>pago</option>
+                        <option value="antes_evento">antes_evento</option>
+                        <option value="pago_pendiente">pago_pendiente</option>
+                        <option value="post_evento">post_evento</option>
                     </select>
                 </div>
                 <div class="eb-form-group">
@@ -125,7 +125,7 @@
     async function cargarRecordatorios() {
         try {
             const res = await ApiRecordatorios.listar();
-            todosRecs = res.data || res || [];
+            todosRecs = (res.data || res || []).reverse();
 
             document.getElementById("statTotal").textContent = todosRecs.length;
             document.getElementById("subTotal").textContent   = todosRecs.length + " registrados";
@@ -164,7 +164,7 @@
             div.innerHTML = `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios</div>`;
             return;
         }
-        const colores = { WhatsApp: "#25D366", encuesta: "#2563EB", pago: "#D97706" };
+        const colores = { antes_evento: "#25D366", pago_pendiente: "#D97706", post_evento: "#2563EB" };
         div.innerHTML = lista.map(r => {
             const id = r.idRecordatorio || r.id;
             const idReserva = r.idReservas || r.reserva;
@@ -215,7 +215,7 @@
 
     async function marcarEnviado(id) {
         try {
-            await ApiRecordatorios.actualizar(id, { estado: "enviado" });
+            await apiFetch(`/api/recordatorios/${id}/enviar`, "PATCH");
             showToast("✅ Marcado como enviado", "success");
             cargarRecordatorios();
         } catch {

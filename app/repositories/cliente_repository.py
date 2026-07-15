@@ -61,13 +61,16 @@ class ClienteRepository:
     def get_by_telefono(self, telefono: str):
         with get_connection() as conn:
             with conn.cursor() as cur:
+                tel_limpio = telefono.replace('+', '').replace(' ', '').replace('-', '')
+                tel_9 = tel_limpio[-9:] if len(tel_limpio) > 9 else tel_limpio
+                tel_12 = '51' + tel_9 if len(tel_9) == 9 else tel_limpio
                 cur.execute(
                     """
                     SELECT idClientes, nombre, telefono, email, fecha_registro
                     FROM clientes
-                    WHERE telefono = %s
+                    WHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') IN (%s, %s, %s)
                     """,
-                    (telefono,),
+                    (tel_limpio, tel_9, tel_12),
                 )
                 return cur.fetchone()
     def create_simple(self, telefono: str):

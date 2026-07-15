@@ -62,9 +62,9 @@
                     </div>
                     <select class="eb-search" style="max-width:150px" id="filtroEstado" onchange="filtrar()">
                         <option value="">Todos estados</option>
-                        <option>Confirmada</option>
-                        <option>Pendiente</option>
-                        <option>Cancelada</option>
+                        <option value="confirmada">Confirmada</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="cancelada">Cancelada</option>
                     </select>
                     <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nueva reserva</button>
@@ -176,16 +176,16 @@
     async function cargarReservas() {
         try {
             const res = await ApiReservas.listar();
-            todasReservas = res.data || res || [];
+            todasReservas = (res.data || res || []).reverse();
 
             document.getElementById("statTotal").textContent = todasReservas.length;
             document.getElementById("subTotal").textContent   = todasReservas.length + " registradas";
 
-            const conf = todasReservas.filter(r => r.estado === "Confirmada").length;
+            const conf = todasReservas.filter(r => (r.estado||"").toLowerCase() === "confirmada").length;
             document.getElementById("statConf").textContent = conf;
             document.getElementById("subConf").textContent   = conf + " de " + todasReservas.length;
 
-            const pend = todasReservas.filter(r => r.estado === "Pendiente").length;
+            const pend = todasReservas.filter(r => (r.estado||"").toLowerCase() === "pendiente").length;
             document.getElementById("statPend").textContent = pend;
             document.getElementById("subPend").textContent   = pend + " de " + todasReservas.length;
 
@@ -209,7 +209,7 @@
     async function cargarPagos() {
         try {
             const res = await ApiPagos.listar();
-            const lista = res.data || res || [];
+            const lista = (res.data || res || []).reverse();
             const tbody = document.getElementById("tablaPagos");
             if (!lista.length) {
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:20px">Sin pagos registrados</td></tr>`;
@@ -238,11 +238,12 @@
 
     function badgeEstadoPago(estado) {
         const map = {
-            "Pagado":   `<span class="eb-badge eb-badge-success">Pagado</span>`,
-            "Parcial":  `<span class="eb-badge eb-badge-warning">Parcial</span>`,
-            "Pendiente":`<span class="eb-badge eb-badge-danger">Pendiente</span>`,
+            "pagado":   `<span class="eb-badge eb-badge-success">Pagado</span>`,
+            "parcial":  `<span class="eb-badge eb-badge-warning">Parcial</span>`,
+            "pendiente":`<span class="eb-badge eb-badge-danger">Pendiente</span>`,
         };
-        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+        const key = (estado || "").toLowerCase();
+        return map[key] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
     }
 
     function renderTabla(lista) {
@@ -263,7 +264,10 @@
                 <td style="color:#475569">${r.hora_evento||r.hora||"—"}</td>
                 <td>${badgeEstado(r.estado)}</td>
                 <td style="font-weight:600">${formatMoney(r.total_reserva||r.total||0)}</td>
-                <td><button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="verReserva(${r.idReservas||r.id})">👁 Ver</button></td>
+                <td>
+                    <button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="verReserva(${r.idReservas||r.id})">👁 Ver</button>
+                    ${(r.estado||"").toLowerCase() === "confirmada" ? `<button class="eb-btn eb-btn-primary eb-btn-sm" onclick="finalizarPago(${r.idReservas||r.id})">💰 Finalizar pago</button>` : ""}
+                </td>
             </tr>
         `;
         }).join("");
@@ -319,11 +323,12 @@
 
     function badgeEstado(estado) {
         const map = {
-            "Confirmada": `<span class="eb-badge eb-badge-success">Confirmada</span>`,
-            "Pendiente":  `<span class="eb-badge eb-badge-warning">Pendiente</span>`,
-            "Cancelada":  `<span class="eb-badge eb-badge-danger">Cancelada</span>`,
+            "confirmada": `<span class="eb-badge eb-badge-success">Confirmada</span>`,
+            "pendiente":  `<span class="eb-badge eb-badge-warning">Pendiente</span>`,
+            "cancelada":  `<span class="eb-badge eb-badge-danger">Cancelada</span>`,
         };
-        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+        const key = (estado || "").toLowerCase();
+        return map[key] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
     }
 
     function abrirModal() { document.getElementById("modalReserva").classList.add("open"); }
@@ -331,6 +336,16 @@
 
     function verReserva(id) {
         showToast(`ℹ️ Ver detalle reserva #${id}`, "info");
+    }
+
+    async function finalizarPago(id) {
+        if (!confirm(`¿Finalizar pago de la reserva #${id}? Se creará el pago del 50% restante.`)) return;
+        try {
+            await ApiReservas.finalizarPago(id);
+            showToast("✅ Pago final registrado, reserva completada", "success");
+            cargarReservas();
+            cargarPagos();
+        } catch { showToast("❌ Error al finalizar pago", "error"); }
     }
 
     async function guardarReserva() {

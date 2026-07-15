@@ -133,24 +133,13 @@
                 btn.disabled = false;
             }
         } catch (e) {
-            // Si la API de usuarios no está lista, usar credenciales locales
-            if (email === "admin@eventbot.pe" && password === "admin123") {
-                localStorage.setItem("eb_usuario", JSON.stringify({
-                    usuario: { id: 1, nombre: "Admin Sistema", email, rol: "admin" },
-                    token: null,
-                    iat: Date.now(),
-                    exp: Date.now() + 28800000
-                }));
-                window.location.href = "dashboard.html";
-            } else {
-                intentos++;
-                mostrarError(
-                    `❌ Credenciales incorrectas — Intento ${intentos}/3`,
-                    "Verifica tu email y contraseña e intenta nuevamente"
-                );
-                btn.textContent = "Ingresar al sistema →";
-                btn.disabled = false;
-            }
+            intentos++;
+            mostrarError(
+                `❌ No se pudo conectar con el servidor`,
+                "Verifica que el backend esté ejecutándose"
+            );
+            btn.textContent = "Ingresar al sistema →";
+            btn.disabled = false;
         }
     }
 

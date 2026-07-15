@@ -73,7 +73,9 @@
     </div>
     <script>
         const params = new URLSearchParams(window.location.search);
-        document.getElementById('telefono').value = params.get('telefono') || '';
+        const telRaw = params.get('telefono') || '';
+        function norm9(t){ return t.replace(/[^0-9]/g,'').slice(-9); }
+        document.getElementById('telefono').value = norm9(telRaw);
         document.getElementById('formRegistro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {

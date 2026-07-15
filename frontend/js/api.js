@@ -62,7 +62,8 @@ const ApiReservas = {
     porCliente:    (clienteId)  => apiFetch(`/api/clientes/${clienteId}/reservas`),
     crear:         (data)       => apiFetch("/api/reservas", "POST", data),
     actualizar:    (id, data)   => apiFetch(`/api/reservas/${id}`, "PUT", data),
-    eliminar:      (id)         => apiFetch(`/api/reservas/${id}`, "DELETE")
+    eliminar:      (id)         => apiFetch(`/api/reservas/${id}`, "DELETE"),
+    finalizarPago: (id)         => apiFetch(`/api/reservas/${id}/finalizar-pago`, "POST")
 };
 
 // ── PAGOS ─────────────────────────────────────
@@ -72,6 +73,7 @@ const ApiPagos = {
     porReserva:    (reservaId)  => apiFetch(`/api/reservas/${reservaId}/pagos`),
     crear:         (data)       => apiFetch("/api/pagos", "POST", data),
     actualizar:    (id, data)   => apiFetch(`/api/pagos/${id}`, "PUT", data),
+    confirmar:     (id)         => apiFetch(`/api/pagos/${id}/confirmar`, "PUT"),
     eliminar:      (id)         => apiFetch(`/api/pagos/${id}`, "DELETE")
 };
 
@@ -99,19 +101,22 @@ const ApiDetalleReserva = {
     crear:      (data)  => apiFetch("/api/detalle-reserva", "POST", data)
 };
 
-// ── RECORDATORIOS (pendiente de implementar en backend) ───
+// ── RECORDATORIOS ──────────────────────────────
 const ApiRecordatorios = {
-    listar:     async () => [],
-    crear:      async () => {},
-    actualizar: async () => {},
-    eliminar:   async () => {}
+    listar:     ()          => apiFetch("/api/recordatorios"),
+    obtener:    (id)        => apiFetch(`/api/recordatorios/${id}`),
+    crear:      (data)      => apiFetch("/api/recordatorios", "POST", data),
+    actualizar: (id, data)  => apiFetch(`/api/recordatorios/${id}`, "PUT", data),
+    eliminar:   (id)        => apiFetch(`/api/recordatorios/${id}`, "DELETE"),
+    generar:    (reservaId) => apiFetch(`/api/recordatorios/generar-para-reserva/${reservaId}`, "POST"),
+    pendientes: ()          => apiFetch("/api/recordatorios/pendientes-para-enviar")
 };
 
-// ── CONVERSACIONES / MENSAJES (pendiente de implementar en backend) ──
+// ── MENSAJES IA ────────────────────────────────
 const ApiMensajes = {
-    listar:        async () => [],
-    porCliente:    async () => [],
-    estadisticas:  async () => ({})
+    listar:        ()         => apiFetch("/api/mensajes-ia"),
+    porCliente:    (id)       => apiFetch(`/api/clientes/${id}/mensajes`),
+    estadisticas:  async ()   => ({})
 };
 
 // ── USUARIOS ───────────────────────────────────

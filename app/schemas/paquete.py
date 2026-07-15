@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class PaqueteBase(BaseModel):
-    nombre: str
+    nombre_paquete: str
     descripcion: str | None = None
     precio: float
     estado: str="activo"

@@ -59,6 +59,15 @@ def update_recordatorio(recordatorio_id: int, data: RecordatorioCreate):
             detail="Recordatorio no encontrado",
         )
     return MessageResponse(mensaje="Recordatorio actualizado correctamente")
+@router.patch("/recordatorios/{recordatorio_id}/enviar", response_model=MessageResponse)
+def marcar_enviado(recordatorio_id: int):
+    updated = service.marcar_enviado(recordatorio_id)
+    if not updated:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recordatorio no encontrado",
+        )
+    return MessageResponse(mensaje="Recordatorio marcado como enviado")
 @router.delete("/recordatorios/{recordatorio_id}", response_model=MessageResponse)
 def delete_recordatorio(recordatorio_id: int):
     deleted = service.delete_recordatorio(recordatorio_id)

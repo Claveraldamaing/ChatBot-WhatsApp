@@ -35,7 +35,7 @@ class PaqueteRepository:
                     INSERT INTO paquetes (nombre_paquete, descripcion, precio,estado)
                     VALUES (%s, %s, %s, %s)
                     """,
-                    (data["nombre"], data["descripcion"], data["precio"],data["estado"]),
+                    (data["nombre_paquete"], data["descripcion"], data["precio"],data["estado"]),
                 )
  
     def update(self, paquete_id: int, data: dict) -> bool:
@@ -47,7 +47,7 @@ class PaqueteRepository:
                     SET nombre_paquete = %s, descripcion = %s, precio = %s, estado = %s
                     WHERE idPaquetes = %s
                     """,
-                    (data["nombre"], data["descripcion"], data["precio"], data["estado"], paquete_id),
+                    (data["nombre_paquete"], data["descripcion"], data["precio"], data["estado"], paquete_id),
                 )
                 return cur.rowcount > 0
  

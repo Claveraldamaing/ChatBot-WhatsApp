@@ -92,11 +92,7 @@
                     <div class="eb-card-sub">Resumen general de la actividad del bot</div>
                 </div>
                 <div class="eb-card-body">
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-                        <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
-                            <div style="font-size:24px;font-weight:700;color:#2563EB" id="statMsgs">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subMsgs">Cargando...</div>
-                        </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#16A34A" id="statConReserva">—</div>
                             <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subConReserva">Cargando...</div>
@@ -104,10 +100,6 @@
                         <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
                             <div style="font-size:24px;font-weight:700;color:#D97706" id="statConsultas">—</div>
                             <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subConsultas">Cargando...</div>
-                        </div>
-                        <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:10px">
-                            <div style="font-size:24px;font-weight:700;color:#7C3AED" id="statRespuestas">—</div>
-                            <div style="font-size:12px;color:#94A3B8;margin-top:4px" id="subRespuestas">Cargando...</div>
                         </div>
                     </div>
                 </div>
@@ -132,7 +124,7 @@
     async function cargarClientes() {
         try {
             const res = await ApiClientes.listar();
-            todosClientesConv = res.data || res || [];
+            todosClientesConv = (res.data || res || []).reverse();
             clientesConvVista = todosClientesConv;
             paginaActual = 1;
             renderPagina();
@@ -152,21 +144,6 @@
             document.getElementById("subConsultas").textContent  = "Sin conexión";
             document.getElementById("statConReserva").textContent = "—";
             document.getElementById("subConReserva").textContent  = "Sin conexión";
-        }
-
-        // Estadísticas reales de mensajes IA (si el endpoint existe)
-        try {
-            const res = await ApiMensajes.estadisticas();
-            const data = res.data || res || {};
-            document.getElementById("statMsgs").textContent = data.total_mensajes ?? "—";
-            document.getElementById("subMsgs").textContent  = "Total mensajes";
-            document.getElementById("statRespuestas").textContent = data.total_respuestas ?? "—";
-            document.getElementById("subRespuestas").textContent  = "Respuestas del bot";
-        } catch {
-            document.getElementById("statMsgs").textContent = "—";
-            document.getElementById("subMsgs").textContent  = "No disponible";
-            document.getElementById("statRespuestas").textContent = "—";
-            document.getElementById("subRespuestas").textContent  = "No disponible";
         }
     }
 
@@ -259,19 +236,19 @@
             return;
         }
         div.innerHTML = mensajes.map(m => `
-            <div style="display:flex;justify-content:${m.rol==='user'?'flex-end':'flex-start'}">
+            <div style="display:flex;justify-content:${m.rol==='cliente'?'flex-end':'flex-start'}">
                 <div style="
                     max-width:75%;
                     padding:8px 12px;
-                    border-radius:${m.rol==='user'?'12px 12px 0 12px':'12px 12px 12px 0'};
-                    background:${m.rol==='user'?'#DCF8C6':'#fff'};
+                    border-radius:${m.rol==='cliente'?'12px 12px 0 12px':'12px 12px 12px 0'};
+                    background:${m.rol==='cliente'?'#DCF8C6':'#fff'};
                     box-shadow:0 1px 2px rgba(0,0,0,0.1);
                     font-size:13px;
                     line-height:1.5;
                 ">
                     ${m.contenido || m.mensaje || "—"}
                     <div style="font-size:10px;color:#94A3B8;margin-top:4px;text-align:right">
-                        ${m.rol==='user'?'👤 Cliente':'🤖 Bot'} · ${formatDate(m.fecha_hora_mensaje)}
+                        ${m.rol==='cliente'?'👤 Cliente':'🤖 Bot'} · ${formatDate(m.fecha_hora_mensaje)}
                     </div>
                 </div>
             </div>
@@ -285,17 +262,17 @@
         const texto = input.value.trim();
         if (!texto) return;
 
-        mensajesActuales.push({ rol: "user", contenido: texto, fecha_hora_mensaje: new Date() });
+        mensajesActuales.push({ rol: "cliente", contenido: texto, fecha_hora_mensaje: new Date() });
         renderChat(mensajesActuales);
         input.value = "";
 
         try {
-            const res = await apiFetch("/api/ia", "POST", { mensaje: texto, id_cliente: clienteActual });
+            const res = await apiFetch("/api/ia", "POST", { texto: texto, idClientes: clienteActual });
             const respuesta = res.respuesta || res.response || "Procesando...";
-            mensajesActuales.push({ rol: "assistant", contenido: respuesta, fecha_hora_mensaje: new Date() });
+            mensajesActuales.push({ rol: "asistente", contenido: respuesta, fecha_hora_mensaje: new Date() });
             renderChat(mensajesActuales);
         } catch {
-            mensajesActuales.push({ rol: "assistant", contenido: "❌ Error conectando con la IA", fecha_hora_mensaje: new Date() });
+            mensajesActuales.push({ rol: "asistente", contenido: "❌ Error conectando con la IA", fecha_hora_mensaje: new Date() });
             renderChat(mensajesActuales);
         }
     }

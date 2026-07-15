@@ -30,7 +30,7 @@
             <div id="msgBox" style="display:none;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:500"></div>
 
             <!-- STATS -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
                 <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DBEAFE">👥</div>
                     <div>
@@ -45,14 +45,6 @@
                         <div class="eb-stat-val" style="color:#16A34A" id="statConReservas">—</div>
                         <div class="eb-stat-label">Con reservas</div>
                         <div class="eb-stat-sub" id="subConReservas">Cargando...</div>
-                    </div>
-                </div>
-                <div class="eb-stat">
-                    <div class="eb-stat-icon" style="background:#FEF3C7">💬</div>
-                    <div>
-                        <div class="eb-stat-val" style="color:#D97706" id="statMensajes">—</div>
-                        <div class="eb-stat-label">Mensajes IA</div>
-                        <div class="eb-stat-sub" id="subMensajes">No disponible</div>
                     </div>
                 </div>
             </div>
@@ -145,13 +137,16 @@
             document.getElementById("statTotal").textContent = todosClientes.length;
             document.getElementById("subTotal").textContent   = todosClientes.length + " en el sistema";
 
-            const conReservas = todosClientes.filter(c => Number(c.total_reservas) > 0).length;
-            document.getElementById("statConReservas").textContent = conReservas;
-            document.getElementById("subConReservas").textContent  = conReservas + " de " + todosClientes.length + " clientes";
-
-            // No hay endpoint de mensajes IA todavía
-            document.getElementById("statMensajes").textContent = "—";
-            document.getElementById("subMensajes").textContent  = "No disponible";
+            try {
+                const resR = await ApiReservas.listar();
+                const reservas = resR.data || resR || [];
+                const conReservas = new Set(reservas.map(r => r.idClientes)).size;
+                document.getElementById("statConReservas").textContent = conReservas;
+                document.getElementById("subConReservas").textContent  = conReservas + " de " + todosClientes.length + " clientes";
+            } catch {
+                document.getElementById("statConReservas").textContent = "—";
+                document.getElementById("subConReservas").textContent  = "Sin datos";
+            }
 
             clientesVista = todosClientes;
             paginaActual = 1;

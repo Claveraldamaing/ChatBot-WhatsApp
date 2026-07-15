@@ -62,9 +62,9 @@
                     </div>
                     <select class="eb-search" style="max-width:150px" id="filtroEstado" onchange="filtrar()">
                         <option value="">Todos</option>
-                        <option>Pagado</option>
-                        <option>Parcial</option>
-                        <option>Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="parcial">Parcial</option>
+                        <option value="pendiente">Pendiente</option>
                     </select>
                     <button class="eb-btn eb-btn-secondary eb-btn-sm">📥 Exportar</button>
                     <button class="eb-btn eb-btn-primary eb-btn-sm" onclick="abrirModal()">+ Nuevo pago</button>
@@ -120,9 +120,9 @@
                 <div class="eb-form-group">
                     <label class="eb-label">Estado</label>
                     <select class="eb-input" id="pago-estado">
-                        <option>Pagado</option>
-                        <option>Parcial</option>
-                        <option>Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="parcial">Parcial</option>
+                        <option value="pendiente">Pendiente</option>
                     </select>
                 </div>
                 <div class="eb-form-group">
@@ -151,17 +151,17 @@
     async function cargarPagos() {
         try {
             const res = await ApiPagos.listar();
-            todosPagos = res.data || res || [];
+            todosPagos = (res.data || res || []).reverse();
 
             const total = todosPagos.reduce((s,p) => s + Number(p.monto_pagado || p.monto || 0), 0);
             document.getElementById("statTotal").textContent = formatMoney(total);
             document.getElementById("subTotal").textContent   = todosPagos.length + " pagos registrados";
 
-            const pagados = todosPagos.filter(p => p.estado === "Pagado").length;
+            const pagados = todosPagos.filter(p => (p.estado||"").toLowerCase() === "pagado").length;
             document.getElementById("statPagados").textContent = pagados;
             document.getElementById("subPagados").textContent   = pagados + " de " + todosPagos.length;
 
-            const parciales = todosPagos.filter(p => p.estado === "Parcial").length;
+            const parciales = todosPagos.filter(p => (p.estado||"").toLowerCase() === "parcial").length;
             document.getElementById("statParciales").textContent = parciales;
             document.getElementById("subParciales").textContent   = parciales + " de " + todosPagos.length;
 
@@ -201,7 +201,7 @@
                 <td>${badgeEstado(p.estado)}</td>
                 <td style="font-family:monospace;font-size:12px;color:#475569">${p.referencia || "—"}</td>
                 <td>
-                    ${p.estado !== "Pagado" ? `<button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="confirmarPago(${id})">✅ Confirmar</button>` : `<span style="color:#94A3B8;font-size:12px">Sin acciones</span>`}
+                    ${(p.estado||"").toLowerCase() !== "pagado" ? `<button class="eb-btn eb-btn-secondary eb-btn-sm" onclick="confirmarPago(${id})">✅ Confirmar</button>` : `<span style="color:#94A3B8;font-size:12px">Sin acciones</span>`}
                 </td>
             </tr>
         `;
@@ -255,11 +255,12 @@
 
     function badgeEstado(estado) {
         const map = {
-            "Pagado":   `<span class="eb-badge eb-badge-success">Pagado</span>`,
-            "Parcial":  `<span class="eb-badge eb-badge-warning">Parcial</span>`,
-            "Pendiente":`<span class="eb-badge eb-badge-danger">Pendiente</span>`,
+            "pagado":   `<span class="eb-badge eb-badge-success">Pagado</span>`,
+            "parcial":  `<span class="eb-badge eb-badge-warning">Parcial</span>`,
+            "pendiente":`<span class="eb-badge eb-badge-danger">Pendiente</span>`,
         };
-        return map[estado] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
+        const key = (estado || "").toLowerCase();
+        return map[key] || `<span class="eb-badge eb-badge-gray">${estado||"—"}</span>`;
     }
 
     function abrirModal() { document.getElementById("modalPago").classList.add("open"); }
@@ -282,7 +283,7 @@
 
     async function confirmarPago(id) {
         try {
-            await ApiPagos.actualizar(id, { estado: "Pagado" });
+            await ApiPagos.confirmar(id);
             showToast("✅ Pago confirmado", "success");
             cargarPagos();
         } catch { showToast("❌ Error al confirmar", "error"); }

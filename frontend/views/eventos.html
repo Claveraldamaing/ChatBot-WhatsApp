@@ -130,7 +130,7 @@
     async function cargarEventos() {
         try {
             const res = await ApiEventos.listar();
-            const lista = res.data || res || [];
+            const lista = (res.data || res || []).reverse();
             const tbody = document.getElementById("tablaEventos");
             if (!lista.length) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin eventos</td></tr>`;
@@ -162,7 +162,7 @@
     async function cargarPaquetes() {
         try {
             const res = await ApiPaquetes.listar();
-            const lista = res.data || res || [];
+            const lista = (res.data || res || []).reverse();
             const tbody = document.getElementById("tablaPaquetes");
             if (!lista.length) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:20px">Sin paquetes</td></tr>`;
@@ -209,7 +209,7 @@
         const descripcion = document.getElementById("ev-descripcion").value.trim();
         if (!nombre) { showToast("⚠️ El nombre es requerido", "warning"); return; }
         try {
-            await ApiEventos.crear({ nombre, descripcion, estado: "Activo" });
+            await ApiEventos.crear({ nombre, descripcion });
             showToast("✅ Evento creado", "success");
             cerrar("modalEvento");
             cargarEventos();

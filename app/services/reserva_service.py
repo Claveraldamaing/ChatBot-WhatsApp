@@ -15,7 +15,10 @@ class ReservaService:
         reservas = self.repository.get_by_cliente(cliente_id)
         return [ReservaResponse(**self._normalize(r)) for r in reservas]
     def create_reserva(self, data: ReservaCreate) -> int:
-        return self.repository.create(data.model_dump())
+        reserva_id = self.repository.create(data.model_dump())
+        from app.services.recordatorio_service import RecordatorioService
+        RecordatorioService().generar_para_reserva(reserva_id)
+        return reserva_id
     def update_reserva(self, reserva_id: int, data: ReservaCreate) -> bool:
         return self.repository.update(reserva_id, data.model_dump())
     def delete_reserva(self, reserva_id: int) -> bool:

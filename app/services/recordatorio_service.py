@@ -22,6 +22,8 @@ class RecordatorioService:
         return self.repository.update(recordatorio_id, data.model_dump())
     def delete_recordatorio(self, recordatorio_id: int) -> bool:
         return self.repository.delete(recordatorio_id)
+    def marcar_enviado(self, recordatorio_id: int) -> bool:
+        return self.repository.update_estado(recordatorio_id, "enviado")
     def generar_para_reserva(self, reserva_id: int) -> bool:
         reserva_repo = ReservaRepository()
         reserva = reserva_repo.get_by_id(reserva_id)

@@ -140,36 +140,6 @@
                 </div>
             </div>
 
-            <!-- SATISFACCION -->
-            <div class="eb-card">
-                <div class="eb-card-header">
-                    <div>
-                        <div class="eb-card-title">Satisfacción de clientes</div>
-                        <div class="eb-card-sub">Promedio general de rating</div>
-                    </div>
-                </div>
-                <div class="eb-card-body">
-                    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
-                        <div style="text-align:center">
-                            <div style="font-size:52px;font-weight:800;color:#16A34A">4.8</div>
-                            <div style="font-size:14px;color:#94A3B8">/ 5.0 promedio</div>
-                            <div style="font-size:24px;margin-top:4px">⭐⭐⭐⭐⭐</div>
-                        </div>
-                        <div style="flex:1;min-width:200px">
-                            <div style="font-size:13px;margin-bottom:12px">
-                                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                                    <span>Formularios respondidos</span>
-                                    <strong id="formRespondidos">—</strong>
-                                </div>
-                                <div class="eb-progress">
-                                    <div class="eb-progress-bar" id="formProgressBar" style="width:0%;background:#16A34A"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 </div>
@@ -216,6 +186,12 @@
             document.getElementById("pctConf").textContent = Math.round(conf/totalEstados*100) + "%";
             document.getElementById("pctPend").textContent = Math.round(pend/totalEstados*100) + "%";
             document.getElementById("pctCanc").textContent = Math.round(canc/totalEstados*100) + "%";
+
+            const pctC = Math.round(conf/totalEstados*100);
+            const pctP = Math.round(pend/totalEstados*100);
+            const pctX = 100 - pctC - pctP;
+            document.getElementById("donutEstados").style.background =
+                `conic-gradient(#16A34A 0% ${pctC}%, #D97706 ${pctC}% ${pctC+pctP}%, #DC2626 ${pctC+pctP}% 100%)`;
 
             renderBarras(reservasFiltradas);
 
@@ -280,19 +256,6 @@
             console.error("Error cargando ranking:", err);
             document.getElementById("tablaRanking").innerHTML =
                 `<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:20px">Sin datos</td></tr>`;
-        }
-
-        try {
-            // Formularios respondidos (si el endpoint existe)
-            const resForm = await ApiFormularios.listar();
-            const formularios = resForm.data || resForm || [];
-            const respondidos = formularios.filter(f => f.respondido || f.estado === "respondido").length;
-            document.getElementById("formRespondidos").textContent = respondidos + " de " + formularios.length;
-            document.getElementById("formProgressBar").style.width =
-                (formularios.length ? Math.round(respondidos/formularios.length*100) : 0) + "%";
-        } catch {
-            document.getElementById("formRespondidos").textContent = "No disponible";
-            document.getElementById("formProgressBar").style.width = "0%";
         }
     }
 

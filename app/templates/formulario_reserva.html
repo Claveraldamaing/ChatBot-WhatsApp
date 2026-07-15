@@ -112,7 +112,9 @@
         <div id="mensaje" class="mensaje"></div>
     </div>
     <script>
-        const telefono = new URLSearchParams(window.location.search).get('telefono') || '';
+        const telefonoRaw = new URLSearchParams(window.location.search).get('telefono') || '';
+        function norm9(t){ return t.replace(/[^0-9]/g,'').slice(-9); }
+        const telefono = norm9(telefonoRaw);
         document.getElementById('telefono').value = telefono;
         let paquetes = [];
         let relaciones = [];
@@ -147,7 +149,7 @@
                 if (paq) {
                     const opt = document.createElement('option');
                     opt.value = rel.id;
-                    opt.textContent = `${paq.nombre} - S/ ${paq.precio}`;
+                    opt.textContent = `${paq.nombre_paquete} - S/ ${paq.precio}`;
                     opt.dataset.precio = paq.precio;
                     selPaquete.appendChild(opt);
                 }
@@ -192,7 +194,7 @@
                         Adelanto (50%): S/ ${(result.total / 2).toFixed(2)}<br>
                         Estado: ${result.estado}<br><br>
                         <strong>Realiza el pago del adelanto a:</strong><br>
-                        Yape: 902091301<br>
+                        Yape: 902091391<br>
                         BCP: 123-456-789<br><br>
                         Luego vuelve a WhatsApp y escribe "ya pague".
                     `;

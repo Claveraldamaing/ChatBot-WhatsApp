@@ -28,7 +28,7 @@ class PaqueteService:
     def _normalize(self, paquete: tuple) -> dict:
         return {
             "id": paquete[0],
-            "nombre": paquete[1],
+            "nombre_paquete": paquete[1],
             "descripcion": paquete[2],
             "precio": paquete[3],
             "estado": paquete[4],
