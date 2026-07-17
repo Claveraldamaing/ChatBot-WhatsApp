@@ -85,13 +85,36 @@ function normalizarTelefono(num) {
     return num.replace('@c.us', '').replace('@lid', '').replace('@g.us', '').replace(/[^0-9]/g, '');
 }
 
-function esTelefonoValido(num) {
-    const limpio = normalizarTelefono(num);
-    return limpio.length >= 9 && limpio.length <= 12;
-}
+function extraerTelefono(msg, contact) {
+    const fuentes = [
+        { nombre: 'contact.number', valor: contact.number },
+        { nombre: 'msg.author', valor: msg.author },
+        { nombre: 'msg.from', valor: msg.from },
+    ];
 
-function esLid(valor) {
-    return valor && valor.endsWith('@lid');
+    for (const fuente of fuentes) {
+        if (!fuente.valor) continue;
+        const limpio = normalizarTelefono(fuente.valor);
+
+        if (limpio.length >= 9 && limpio.length <= 12) {
+            console.log(`[DEBUG] Fuente: ${fuente.nombre} → "${limpio}"`);
+            return limpio.slice(-9);
+        }
+
+        if (limpio.length >= 10) {
+            console.log(`[DEBUG] Fuente: ${fuente.nombre} (LID/largo) → "${limpio}"`);
+            return limpio;
+        }
+    }
+
+    const fallback = normalizarTelefono(msg.from || '');
+    if (fallback.length >= 9) {
+        console.log(`[DEBUG] Fuente: fallback msg.from → "${fallback}"`);
+        return fallback.length > 9 ? fallback.slice(-9) : fallback;
+    }
+
+    console.log(`[DEBUG] No se pudo extraer telefono de ninguna fuente`);
+    return null;
 }
 
 function registrarHandlerMensajes(c) {
@@ -106,57 +129,18 @@ function registrarHandlerMensajes(c) {
             const contact = await msg.getContact();
             console.log(`[DEBUG] contact.number: "${contact.number}" | msg.from: "${msg.from}" | msg.author: "${msg.author}" | contact.name: "${contact.name}"`);
 
-            let telefonoRaw = null;
+            const telefono = extraerTelefono(msg, contact);
 
-            if (contact.number && esTelefonoValido(contact.number)) {
-                telefonoRaw = contact.number;
-                console.log(`[DEBUG] Fuente: contact.number`);
-            }
-
-            if (!telefonoRaw && msg.author && !esLid(msg.author)) {
-                const authorLimpio = normalizarTelefono(msg.author);
-                if (authorLimpio.length >= 9 && authorLimpio.length <= 12) {
-                    telefonoRaw = authorLimpio;
-                    console.log(`[DEBUG] Fuente: msg.author`);
-                }
-            }
-
-            if (!telefonoRaw && msg.from && !esLid(msg.from)) {
-                const fromLimpio = normalizarTelefono(msg.from);
-                if (fromLimpio.length >= 9 && fromLimpio.length <= 12) {
-                    telefonoRaw = fromLimpio;
-                    console.log(`[DEBUG] Fuente: msg.from`);
-                }
-            }
-
-            if (!telefonoRaw) {
-                telefonoRaw = msg.from;
-                console.log(`[DEBUG] Fuente: msg.from (fallback final)`);
-            }
-
-            let telefono;
-            if (telefonoRaw && !esLid(telefonoRaw) && normalizarTelefono(telefonoRaw).length >= 9) {
-                telefono = normalizarTelefono(telefonoRaw).slice(-9);
-            } else {
-                telefono = normalizarTelefono(telefonoRaw);
-                if (telefono.length > 9) {
-                    telefono = telefono.slice(-9);
-                }
-            }
-
-            console.log(`[DEBUG] telefonoRaw: "${telefonoRaw}" | telefono (9 digitos): "${telefono}"`);
-
-            if (telefono.length < 9) {
-                console.log(`Ignorado (telefono muy corto): "${telefono}" de raw "${telefonoRaw}"`);
+            if (!telefono) {
+                console.log(`Ignorado (no se pudo extraer telefono)`);
                 return;
             }
 
-            const texto = msg.body;
-            console.log(`Mensaje de ${telefono}: ${texto}`);
+            console.log(`Mensaje de ${telefono}: ${msg.body}`);
 
             const res = await axios.post(FASTAPI_URL, {
                 telefono: telefono,
-                texto: texto
+                texto: msg.body
             });
             if (res.data.respuesta) {
                 const delayMs = 2000 + Math.random() * 2000;

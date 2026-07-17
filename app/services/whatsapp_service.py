@@ -18,6 +18,7 @@ class WhatsAppService:
 
     def procesar_mensaje_local(self, telefono: str, texto: str) -> str | None:
         telefono_norm = self._normalizar_telefono(telefono)
+        es_lid = len(telefono.replace(' ', '')) > 12
         cliente = self.cliente_repo.get_by_telefono(telefono_norm)
         if cliente:
             id_clientes = cliente[0]
@@ -33,11 +34,12 @@ class WhatsAppService:
                         f"{settings.ngrok_url}/formulario/reserva?telefono={telefono_real}"
                     )
             return respuesta_ia
-        print(f"Cliente no registrado: {telefono_norm}")
+        print(f"Cliente no registrado: {telefono_norm} (es_lid={es_lid})")
         if settings.ngrok_url:
+            param_tel = "" if es_lid else f"?telefono={telefono_norm}"
             return (
                 "Hola! Para poder atenderte mejor, primero necesitamos que te registres como cliente.\n"
-                f"Registrate aqui: {settings.ngrok_url}/formulario/cliente?telefono={telefono_norm}"
+                f"Registrate aqui: {settings.ngrok_url}/formulario/cliente{param_tel}"
             )
         return (
             "Hola! Para poder atenderte mejor, primero necesitamos que te registres como cliente. "
