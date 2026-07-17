@@ -30,12 +30,6 @@ client.on('error', err => {
     console.error('Error en el bridge:', err.message);
 });
 
-const numerosPermitidos = ['985362643', '991485333', '930856779', '972086477', '930397648'];
-
-const lidMap = {
-    '236017109987455@lid': '930397648'
-};
-
 function normalizarTelefono(num) {
     return num.replace('@c.us', '').replace('@lid', '').replace('@g.us', '').replace(/[^0-9]/g, '');
 }
@@ -83,17 +77,6 @@ client.on('message', async msg => {
     }
 
     if (!telefonoRaw) {
-        const lidKey = esLid(msg.from) ? msg.from : (esLid(msg.author) ? msg.author : null);
-        if (lidKey && lidMap[lidKey]) {
-            telefonoRaw = lidMap[lidKey];
-            console.log(`[DEBUG] Fuente: lidMap[${lidKey}]`);
-        } else if (lidKey) {
-            const contactName = contact.name || contact.pushname || 'desconocido';
-            console.log(`[WARNING] LID no resuelto: lid="${lidKey}" | nombre="${contactName}" | Agregar al lidMap en bridge.js`);
-        }
-    }
-
-    if (!telefonoRaw) {
         telefonoRaw = msg.from;
         console.log(`[DEBUG] Fuente: msg.from (fallback final)`);
     }
@@ -114,13 +97,6 @@ client.on('message', async msg => {
         console.log(`Ignorado (telefono muy corto): "${telefono}" de raw "${telefonoRaw}"`);
         return;
     }
-
-    if (!numerosPermitidos.includes(telefono)) {
-        console.log(`[DEBUG] match: false | numerosPermitidos: [${numerosPermitidos.join(', ')}]`);
-        console.log(`Ignorado (numero no autorizado): ${telefono}`);
-        return;
-    }
-    console.log(`[DEBUG] match: true`);
 
     const texto = msg.body;
     console.log(`Mensaje de ${telefono}: ${texto}`);
