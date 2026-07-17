@@ -1,4 +1,5 @@
 from openai import OpenAI
+from collections import defaultdict
 from app.core.config import settings
 from app.repositories.mensajes_ia_repository import MensajesIARepository
 from app.repositories.paquete_repository import PaqueteRepository
@@ -67,6 +68,23 @@ class IAService:
             )
         else:
             pagos_texto = "No hay pagos registrados para este cliente."
+
+        if pagos:
+            resumen = defaultdict(lambda: {"pagado": 0.0, "total": 0.0, "estado": ""})
+            for p in pagos:
+                rid = p[1]
+                if (p[4] or "").lower() == "pagado":
+                    resumen[rid]["pagado"] += float(p[2])
+                resumen[rid]["total"] = float(p[7])
+                resumen[rid]["estado"] = p[8] or ""
+            resumen_lines = []
+            for rid, info in sorted(resumen.items()):
+                pct = round(info["pagado"] / info["total"] * 100) if info["total"] > 0 else 0
+                resumen_lines.append(
+                    f"- Reserva #{rid}: Pagado S/.{info['pagado']:.0f} de S/.{info['total']:.0f} ({pct}%) — {info['estado']}"
+                )
+            pagos_texto += "\nRESUMEN DE PAGO POR RESERVA:\n" + "\n".join(resumen_lines)
+
         eventos_texto = "\n".join(
         [
         f"- {evento[0]}: {evento[1]}"
@@ -127,7 +145,7 @@ Formulario de Reserva:
 4. DISPONIBILIDAD: Si preguntan por disponibilidad: Indica que se debe validar la fecha. Solicita la fecha del evento si aún no la indicó. Comparte el formulario de reserva.
 5. FORMULARIOS: Siempre que compartas un formulario, muestra el enlace completo para que el cliente pueda acceder directamente.
 6. USO DEL HISTORIAL: El historial muestra los mensajes anteriores de este cliente. Debes usarlo para entender el contexto.
-7. PAGOS: Si el cliente menciona que ya pago: Revisa los PAGOS REGISTRADOS DEL CLIENTE. Si la reserva esta 'completada' y todos los pagos estan 'pagados', confirma que el pago esta completo al 100%. Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma el adelanto e informa que falta el saldo restante. Si hay un pago con estado 'pendiente', informa que esta en espera de confirmacion. Si no hay pagos registrados, indica que un asesor verificara.
+7. PAGOS: Si el cliente menciona que ya pago o pregunta por el estado de sus pagos: Usa el RESUMEN DE PAGO POR RESERVA que muestra el total pagado y el porcentaje por cada reserva. Si el porcentaje es 100%, confirma que esta todo pagado. Si es menor al 100%, informa cuanto falta. Si esta en 0%, indica que no hay pagos registrados.
 HISTORIAL DE LA CONVERSACIÓN:
 {historial_texto}
 """,

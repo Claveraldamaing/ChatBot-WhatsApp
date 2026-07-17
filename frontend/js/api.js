@@ -141,6 +141,11 @@ const ApiFormularios = {
     listar: async () => []
 };
 
+// ── DASHBOARD ──────────────────────────────────
+const ApiDashboard = {
+    stats: () => apiFetch("/api/dashboard/stats")
+};
+
 // ── STATUS ────────────────────────────────────
 const ApiStatus = {
     check: async () => apiFetch("/api/clientes")

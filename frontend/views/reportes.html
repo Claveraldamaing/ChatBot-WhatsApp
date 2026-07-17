@@ -67,8 +67,8 @@
                     <div class="eb-stat-icon" style="background:#F3E8FF">📈</div>
                     <div>
                         <div class="eb-stat-val" style="color:#7C3AED" id="statTasa">—</div>
-                        <div class="eb-stat-label">Tasa confirmación</div>
-                        <div class="eb-stat-sub">Confirmadas sobre el total</div>
+                        <div class="eb-stat-label">Tasa finalización</div>
+                        <div class="eb-stat-sub">Completadas sobre el total</div>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,7 @@
                             <div class="eb-donut-legend">
                                 <div class="eb-donut-item">
                                     <div class="eb-donut-dot" style="background:#16A34A"></div>
-                                    <span style="font-size:13px">Confirmada <strong id="pctConf">—</strong></span>
+                                    <span style="font-size:13px">Completada <strong id="pctConf">—</strong></span>
                                 </div>
                                 <div class="eb-donut-item">
                                     <div class="eb-donut-dot" style="background:#D97706"></div>
@@ -174,7 +174,7 @@
             document.getElementById("statReservas").textContent = reservasFiltradas.length;
             document.getElementById("subReservas").textContent  = reservasFiltradas.length + " en el período";
 
-            const conf = reservasFiltradas.filter(r => (r.estado||"").toLowerCase() === "confirmada").length;
+            const conf = reservasFiltradas.filter(r => (r.estado||"").toLowerCase() === "completada").length;
             const pend = reservasFiltradas.filter(r => (r.estado||"").toLowerCase() === "pendiente").length;
             const canc = reservasFiltradas.filter(r => (r.estado||"").toLowerCase() === "cancelada").length;
             const totalEstados = reservasFiltradas.length || 1;
@@ -228,16 +228,32 @@
             // Ranking eventos (datos reales, sin números inventados)
             const resEventos = await ApiEventos.listar();
             eventosData = resEventos.data || resEventos || [];
+
+            const resDetalle = await ApiDetalleReserva.listar();
+            const detalles = resDetalle.data || resDetalle || [];
+
+            const resPaqEvt = await ApiPaquetesEventos.listar();
+            const paqEvt = resPaqEvt.data || resPaqEvt || [];
+
+            const peMap = {};
+            paqEvt.forEach(pe => { peMap[pe.id || pe.idPaquetesEventos] = pe.idEventos; });
+
+            const resToEvento = {};
+            detalles.forEach(d => {
+                const evId = peMap[d.idPaquetesEventos];
+                if (evId) resToEvento[d.idReservas || d.reserva] = evId;
+            });
+
             const tbody = document.getElementById("tablaRanking");
 
             const ranking = eventosData.map(e => {
                 const idEvento = e.idEventos || e.id;
                 const reservasDelEvento = reservasFiltradas.filter(r =>
-                    (r.idEventos || r.id_evento) === idEvento
+                    resToEvento[r.idReservas || r.id] === idEvento
                 );
                 const ingresosEvento = reservasDelEvento.reduce((s,r) => s + Number(r.total_reserva || r.total || 0), 0);
                 return { nombre: e.nombre || "Sin nombre", reservas: reservasDelEvento.length, ingresos: ingresosEvento };
-            }).sort((a,b) => b.reservas - a.reservas);
+            }).filter(r => r.reservas > 0).sort((a,b) => b.reservas - a.reservas);
 
             if (!ranking.length) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:20px">Sin eventos registrados</td></tr>`;
@@ -276,7 +292,7 @@
         cont.innerHTML = entradas.map(([mes, val]) => `
             <div class="eb-bar-wrap">
                 <div class="eb-bar-val">${val}</div>
-                <div class="eb-bar" style="height:${Math.round(val/max*100)}%"></div>
+                <div class="eb-bar" style="height:${Math.max(4, Math.round(val/max*100))}px"></div>
                 <div class="eb-bar-label">${mes}</div>
             </div>
         `).join("");

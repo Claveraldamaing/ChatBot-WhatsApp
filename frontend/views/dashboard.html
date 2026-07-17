@@ -27,38 +27,38 @@
 
         <div class="eb-content">
 
-            <!-- STATS -->
+            <!-- KPIs -->
             <div class="eb-stats">
                 <div class="eb-stat">
-                    <div class="eb-stat-icon" style="background:#DBEAFE">📅</div>
+                    <div class="eb-stat-icon" style="background:#DBEAFE">📋</div>
                     <div>
-                        <div class="eb-stat-val" style="color:#2563EB" id="statEventos">—</div>
-                        <div class="eb-stat-label">Total eventos</div>
-                        <div class="eb-stat-sub" id="subEventos">Cargando...</div>
-                    </div>
-                </div>
-                <div class="eb-stat">
-                    <div class="eb-stat-icon" style="background:#DCFCE7">📋</div>
-                    <div>
-                        <div class="eb-stat-val" style="color:#16A34A" id="statReservas">—</div>
-                        <div class="eb-stat-label">Reservas confirmadas</div>
-                        <div class="eb-stat-sub" id="subReservas">Cargando...</div>
-                    </div>
-                </div>
-                <div class="eb-stat">
-                    <div class="eb-stat-icon" style="background:#FEF3C7">👥</div>
-                    <div>
-                        <div class="eb-stat-val" style="color:#D97706" id="statClientes">—</div>
-                        <div class="eb-stat-label">Clientes registrados</div>
-                        <div class="eb-stat-sub" id="subClientes">Cargando...</div>
+                        <div class="eb-stat-val" style="color:#2563EB" id="statActivas">—</div>
+                        <div class="eb-stat-label">Reservas activas</div>
+                        <div class="eb-stat-sub" id="subActivas">Cargando...</div>
                     </div>
                 </div>
                 <div class="eb-stat">
                     <div class="eb-stat-icon" style="background:#DCFCE7">💰</div>
                     <div>
                         <div class="eb-stat-val" style="color:#16A34A" id="statIngresos">—</div>
-                        <div class="eb-stat-label">Ingresos totales</div>
+                        <div class="eb-stat-label">Ingresos cobrados</div>
                         <div class="eb-stat-sub" id="subIngresos">Cargando...</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#FEF3C7">⏳</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#D97706" id="statPendCobro">—</div>
+                        <div class="eb-stat-label">Pendiente de cobro</div>
+                        <div class="eb-stat-sub" id="subPendCobro">Cargando...</div>
+                    </div>
+                </div>
+                <div class="eb-stat">
+                    <div class="eb-stat-icon" style="background:#EDE9FE">📅</div>
+                    <div>
+                        <div class="eb-stat-val" style="color:#7C3AED" id="statProximo">—</div>
+                        <div class="eb-stat-label">Próximo evento</div>
+                        <div class="eb-stat-sub" id="subProximo">Cargando...</div>
                     </div>
                 </div>
             </div>
@@ -77,14 +77,14 @@
                         <div class="eb-donut" id="miniDonut" style="width:90px;height:90px;flex-shrink:0">
                             <div style="position:absolute;width:50px;height:50px;background:var(--bg2);border-radius:50%"></div>
                         </div>
-                        <div style="font-size:12px">
-                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-                                <div style="width:8px;height:8px;border-radius:2px;background:#16A34A"></div>
-                                Confirmadas <strong id="miniConf">0</strong>
-                            </div>
+                        <div style="font-size:12px" id="donutLegend">
                             <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
                                 <div style="width:8px;height:8px;border-radius:2px;background:#D97706"></div>
                                 Pendientes <strong id="miniPend">0</strong>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                                <div style="width:8px;height:8px;border-radius:2px;background:#16A34A"></div>
+                                Completadas <strong id="miniComp">0</strong>
                             </div>
                             <div style="display:flex;align-items:center;gap:6px">
                                 <div style="width:8px;height:8px;border-radius:2px;background:#DC2626"></div>
@@ -99,7 +99,7 @@
                     <div class="eb-card-header">
                         <div>
                             <div class="eb-card-title">Ingresos por mes</div>
-                            <div class="eb-card-sub">Monto recaudado por mes</div>
+                            <div class="eb-card-sub">Solo pagos confirmados</div>
                         </div>
                     </div>
                     <div class="eb-card-body">
@@ -109,21 +109,21 @@
                     </div>
                 </div>
 
-                <!-- PROGRESS RESERVAS -->
+                <!-- PROGRESS COMPLETADAS -->
                 <div class="eb-card">
                     <div class="eb-card-header">
                         <div>
-                            <div class="eb-card-title">Tasa de confirmación</div>
-                            <div class="eb-card-sub">Reservas confirmadas vs total</div>
+                            <div class="eb-card-title">Tasa de finalización</div>
+                            <div class="eb-card-sub">Reservas completadas vs total</div>
                         </div>
                     </div>
                     <div class="eb-card-body">
                         <div style="text-align:center;margin-bottom:12px">
-                            <div style="font-size:36px;font-weight:800;color:var(--accent)" id="pctConfirmacion">0%</div>
-                            <div style="font-size:12px;color:var(--text3)" id="subPctConfirmacion">0 de 0 reservas</div>
+                            <div style="font-size:36px;font-weight:800;color:var(--success)" id="pctCompletadas">0%</div>
+                            <div style="font-size:12px;color:var(--text3)" id="subPctCompletadas">0 de 0 reservas</div>
                         </div>
                         <div class="eb-progress" style="height:10px">
-                            <div class="eb-progress-bar" id="barConfirmacion" style="width:0%;background:var(--accent);transition:width 0.8s ease"></div>
+                            <div class="eb-progress-bar" id="barCompletadas" style="width:0%;background:var(--success);transition:width 0.8s ease"></div>
                         </div>
                         <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text3)">
                             <span>0%</span>
@@ -190,167 +190,125 @@
         "Bienvenido, " + Auth.getNombre() + " · " +
         new Date().toLocaleDateString("es-PE", { weekday:"long", day:"numeric", month:"short", year:"numeric" });
 
-    // Mapa de clientes para resolver nombres
-    let clientesMap = {};
-
-    async function cargarDashboard() {
-
-        // Clientes
-        try {
-            const res = await ApiClientes.listar();
-            const lista = Array.isArray(res) ? res : (res.data || res || []);
-            lista.forEach(c => { clientesMap[c.idClientes || c.id] = c.nombre; });
-            document.getElementById("statClientes").textContent = lista.length;
-            document.getElementById("subClientes").textContent  = lista.length + " clientes en el sistema";
-        } catch {
-            document.getElementById("statClientes").textContent = "—";
-            document.getElementById("subClientes").textContent  = "Sin conexión";
-        }
-
-        // Eventos
-        try {
-            const res = await ApiEventos.listar();
-            const lista = Array.isArray(res) ? res : (res.data || res || []);
-            document.getElementById("statEventos").textContent = lista.length;
-            document.getElementById("subEventos").textContent  = lista.filter(e => (e.estado||"").toLowerCase() === "activo").length + " activos";
-        } catch {
-            document.getElementById("statEventos").textContent = "—";
-            document.getElementById("subEventos").textContent  = "Sin conexión";
-        }
-
-        // Reservas
-        try {
-            const res = await ApiReservas.listar();
-            const lista = Array.isArray(res) ? res : (res.data || res || []);
-            const confirmadas = lista.filter(r =>
-                (r.estado||"").toLowerCase() === "confirmada"
-            ).length;
-            const pendientes = lista.filter(r =>
-                (r.estado||"").toLowerCase() === "pendiente"
-            ).length;
-            const canceladas = lista.filter(r =>
-                (r.estado||"").toLowerCase() === "cancelada"
-            ).length;
-
-            document.getElementById("statReservas").textContent = confirmadas;
-            document.getElementById("subReservas").textContent  = confirmadas + " de " + lista.length + " totales";
-
-            // Donut
-            const totalD = lista.length || 1;
-            const pctC = Math.round(confirmadas/totalD*100);
-            const pctP = Math.round(pendientes/totalD*100);
-            document.getElementById("miniDonut").style.background =
-                `conic-gradient(#16A34A 0% ${pctC}%, #D97706 ${pctC}% ${pctC+pctP}%, #DC2626 ${pctC+pctP}% 100%)`;
-            document.getElementById("miniConf").textContent = confirmadas;
-            document.getElementById("miniPend").textContent = pendientes;
-            document.getElementById("miniCanc").textContent = canceladas;
-
-            // Progress bar
-            if (lista.length > 0) {
-                const pctConfirm = Math.round(confirmadas / lista.length * 100);
-                document.getElementById("pctConfirmacion").textContent = pctConfirm + "%";
-                document.getElementById("subPctConfirmacion").textContent = confirmadas + " de " + lista.length + " reservas";
-                setTimeout(() => { document.getElementById("barConfirmacion").style.width = pctConfirm + "%"; }, 100);
-            }
-
-            // Tabla últimas reservas
-            const ultimas = lista.reverse().slice(0, 5);
-            const tbody = document.getElementById("tablaReservas");
-            if (!ultimas.length) {
-                tbody.innerHTML = `<tr><td colspan="5"><div class="eb-empty" style="padding:20px"><div class="eb-empty-icon">📋</div><div class="eb-empty-text">Sin reservas registradas</div></div></td></tr>`;
-            } else {
-                tbody.innerHTML = ultimas.map(r => {
-                    const idCli   = r.idClientes || r.id_cliente;
-                    const nombre  = clientesMap[idCli] || r.clienteNombre || r.nombre_cliente || (idCli ? "Cliente #" + idCli : "—");
-                    return `
-                    <tr>
-                        <td><strong>#${r.idReservas || r.id}</strong></td>
-                        <td>${nombre}</td>
-                        <td>${formatDate(r.fecha_evento)}</td>
-                        <td>${badgeEstado(r.estado)}</td>
-                        <td style="font-weight:600">${formatMoney(r.total_reserva || r.total || 0)}</td>
-                    </tr>`;
-                }).join("");
-            }
-        } catch (err) {
-            console.error("Error reservas:", err);
-            document.getElementById("statReservas").textContent = "—";
-            document.getElementById("subReservas").textContent  = "Sin conexión";
-            document.getElementById("tablaReservas").innerHTML  =
-                `<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:20px">Sin datos</td></tr>`;
-        }
-
-        // Pagos
-        try {
-            const res = await ApiPagos.listar();
-            const lista = Array.isArray(res) ? res : (res.data || res || []);
-            const total = lista.reduce((s, p) => s + Number(p.monto_pagado || p.monto || 0), 0);
-            document.getElementById("statIngresos").textContent = formatMoney(total);
-            document.getElementById("subIngresos").textContent  = lista.length + " pagos registrados";
-
-            renderBarrasDash(lista);
-        } catch {
-            document.getElementById("statIngresos").textContent = "—";
-            document.getElementById("subIngresos").textContent  = "Sin datos de pagos";
-        }
-
-        // Recordatorios
-        try {
-            const res = await ApiRecordatorios.listar();
-            const lista = Array.isArray(res) ? res : (res.data || res || []);
-            const pendientes = lista.filter(r => r.estado === "pendiente").reverse().slice(0, 4);
-            const div = document.getElementById("listaRecordatorios");
-            const colores = { antes_evento: "#25D366", pago_pendiente: "#D97706", post_evento: "#2563EB" };
-            if (!pendientes.length) {
-                div.innerHTML = `<div class="eb-empty" style="padding:16px"><div class="eb-empty-icon">🔔</div><div class="eb-empty-text">Sin recordatorios pendientes</div></div>`;
-            } else {
-                div.innerHTML = pendientes.map(r => `
-                    <div class="eb-reminder">
-                        <div class="eb-reminder-dot" style="background:${colores[r.tipo]||'#94A3B8'}"></div>
-                        <div>
-                            <div class="eb-reminder-title">${r.tipo||"Recordatorio"} · ${(r.mensaje||"Sin mensaje").substring(0,45)}...</div>
-                            <div class="eb-reminder-sub">📅 ${formatDate(r.fecha_programada)} · <span style="color:#D97706;font-weight:600">pendiente</span></div>
-                        </div>
-                    </div>
-                `).join("");
-            }
-        } catch {
-            document.getElementById("listaRecordatorios").innerHTML =
-                `<div style="padding:20px;text-align:center;color:#94A3B8">Sin recordatorios</div>`;
-        }
-    }
-
-    function renderBarrasDash(pagos) {
-        const cont = document.getElementById("dashBarras");
-        const meses = {};
-        pagos.forEach(p => {
-            const f = new Date(p.fecha_pago || p.fecha);
-            if (isNaN(f)) return;
-            const key = f.toLocaleDateString("es-PE", { month: "short" });
-            meses[key] = (meses[key] || 0) + Number(p.monto_pagado || p.monto || 0);
-        });
-        const entradas = Object.entries(meses).slice(-6);
-        if (!entradas.length) {
-            cont.innerHTML = `<div style="text-align:center;color:#94A3B8;padding:16px;width:100%">Sin pagos en el período</div>`;
-            return;
-        }
-        const max = Math.max(...entradas.map(([,v]) => v));
-        cont.innerHTML = entradas.map(([mes, val]) => `
-            <div class="eb-bar-wrap">
-                <div class="eb-bar-val" style="font-size:9px">${formatMoney(val)}</div>
-                <div class="eb-bar" style="height:${Math.round(val/max*100)}%"></div>
-                <div class="eb-bar-label">${mes}</div>
-            </div>
-        `).join("");
-    }
-
     function badgeEstado(estado) {
         if (!estado) return `<span class="eb-badge eb-badge-gray">—</span>`;
         const n = estado.toLowerCase();
-        if (n === "confirmada") return `<span class="eb-badge eb-badge-success">Confirmada</span>`;
-        if (n === "pendiente")  return `<span class="eb-badge eb-badge-warning">Pendiente</span>`;
-        if (n === "cancelada")  return `<span class="eb-badge eb-badge-danger">Cancelada</span>`;
+        if (n === "pendiente")   return `<span class="eb-badge eb-badge-warning">Pendiente</span>`;
+        if (n === "confirmada")  return `<span class="eb-badge eb-badge-primary">Confirmada</span>`;
+        if (n === "completada")  return `<span class="eb-badge eb-badge-success">Completada</span>`;
+        if (n === "cancelada")   return `<span class="eb-badge eb-badge-danger">Cancelada</span>`;
         return `<span class="eb-badge eb-badge-gray">${estado}</span>`;
+    }
+
+    async function cargarDashboard() {
+        let stats;
+        try {
+            stats = await ApiDashboard.stats();
+        } catch (err) {
+            console.error("Error al cargar dashboard:", err);
+            document.getElementById("statActivas").textContent = "—";
+            document.getElementById("subActivas").textContent = "Sin conexión al backend";
+            return;
+        }
+
+        const { total_eventos, reservas, ingresos_cobrados, pendiente_cobro,
+                total_clientes, recordatorios_pendientes, proximo_evento,
+                ingresos_por_mes, ultimas_reservas, recordatorios } = stats;
+
+        const activas = reservas.pendientes + reservas.confirmadas;
+
+        document.getElementById("statActivas").textContent = activas;
+        document.getElementById("subActivas").textContent =
+            `${reservas.pendientes} pend. · ${reservas.confirmadas} conf. · ${total_eventos} eventos totales`;
+
+        document.getElementById("statIngresos").textContent = formatMoney(ingresos_cobrados);
+        document.getElementById("subIngresos").textContent =
+            `Pagos confirmados · ${reservas.total} reservas totales`;
+
+        document.getElementById("statPendCobro").textContent = formatMoney(pendiente_cobro);
+        document.getElementById("subPendCobro").textContent =
+            `Reservas pendientes/completadas sin cobrar`;
+
+        if (proximo_evento) {
+            document.getElementById("statProximo").textContent = formatDate(proximo_evento.fecha_evento);
+            document.getElementById("subProximo").textContent =
+                `${proximo_evento.cliente_nombre} · ${proximo_evento.estado}`;
+        } else {
+            document.getElementById("statProximo").textContent = "—";
+            document.getElementById("subProximo").textContent = "Sin reservas próximas";
+        }
+
+        const totalR = reservas.total || 1;
+        const pctP = Math.round(reservas.pendientes / totalR * 100);
+        const pctComp = Math.round(reservas.completadas / totalR * 100);
+        const pctCanc = 100 - pctP - pctComp;
+        document.getElementById("miniDonut").style.background =
+            `conic-gradient(#D97706 0% ${pctP}%, #16A34A ${pctP}% ${pctP+pctComp}%, #DC2626 ${pctP+pctComp}% 100%)`;
+        document.getElementById("miniPend").textContent = reservas.pendientes;
+        document.getElementById("miniComp").textContent = reservas.completadas;
+        document.getElementById("miniCanc").textContent = reservas.canceladas;
+
+        const pctFinal = Math.round(reservas.completadas / totalR * 100);
+        document.getElementById("pctCompletadas").textContent = pctFinal + "%";
+        document.getElementById("subPctCompletadas").textContent =
+            reservas.completadas + " de " + reservas.total + " reservas";
+        setTimeout(() => {
+            document.getElementById("barCompletadas").style.width = pctFinal + "%";
+        }, 100);
+
+        renderBarras(ingresos_por_mes);
+
+        const tbody = document.getElementById("tablaReservas");
+        if (!ultimas_reservas.length) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="eb-empty" style="padding:20px"><div class="eb-empty-icon">📋</div><div class="eb-empty-text">Sin reservas registradas</div></div></td></tr>`;
+        } else {
+            tbody.innerHTML = ultimas_reservas.map(r => `
+                <tr>
+                    <td><strong>#${r.id}</strong></td>
+                    <td>${r.cliente_nombre || "—"}</td>
+                    <td>${formatDate(r.fecha_evento)}</td>
+                    <td>${badgeEstado(r.estado)}</td>
+                    <td style="font-weight:600">${formatMoney(r.total_reserva || 0)}</td>
+                </tr>
+            `).join("");
+        }
+
+        const recDiv = document.getElementById("listaRecordatorios");
+        if (!recordatorios.length) {
+            recDiv.innerHTML = `<div class="eb-empty" style="padding:16px"><div class="eb-empty-icon">🔔</div><div class="eb-empty-text">Sin recordatorios pendientes</div></div>`;
+        } else {
+            const colores = { antes_evento: "#25D366", pago_pendiente: "#D97706", post_evento: "#2563EB" };
+            recDiv.innerHTML = recordatorios.map(r => `
+                <div class="eb-reminder">
+                    <div class="eb-reminder-dot" style="background:${colores[r.tipo]||'#94A3B8'}"></div>
+                    <div>
+                        <div class="eb-reminder-title">${r.tipo||"Recordatorio"} · ${(r.mensaje||"Sin mensaje").substring(0,45)}...</div>
+                        <div class="eb-reminder-sub">📅 ${formatDate(r.fecha_programada)} · <span style="color:#D97706;font-weight:600">pendiente</span></div>
+                    </div>
+                </div>
+            `).join("");
+        }
+    }
+
+    function renderBarras(ingresos) {
+        const cont = document.getElementById("dashBarras");
+        if (!ingresos || !ingresos.length) {
+            cont.innerHTML = `<div style="text-align:center;color:#94A3B8;padding:16px;width:100%">Sin pagos en el período</div>`;
+            return;
+        }
+        const max = Math.max(...ingresos.map(i => i.total));
+        cont.innerHTML = ingresos.map(i => {
+            const fecha = new Date(i.mes + "-01");
+            const label = fecha.toLocaleDateString("es-PE", { month: "short" });
+            const h = Math.max(4, Math.round((i.total / max) * 100));
+            return `
+                <div class="eb-bar-wrap">
+                    <div class="eb-bar-val" style="font-size:9px">${formatMoney(i.total)}</div>
+                    <div class="eb-bar" style="height:${h}px"></div>
+                    <div class="eb-bar-label">${label}</div>
+                </div>
+            `;
+        }).join("");
     }
 
     cargarDashboard();
