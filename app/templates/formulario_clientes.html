@@ -62,7 +62,7 @@
         <h1>Registro de Cliente</h1>
         <form id="formRegistro">
             <label>Teléfono</label>
-            <input type="text" id="telefono" readonly>
+            <input type="text" id="telefono" placeholder="Tu numero de telefono" required>
             <label>Nombre</label>
             <input type="text" id="nombre" placeholder="Tu nombre" required>
             <label>Email (opcional)</label>
@@ -73,15 +73,15 @@
     </div>
     <script>
         const params = new URLSearchParams(window.location.search);
-        const telRaw = params.get('telefono') || '';
-        function norm9(t){ return t.replace(/[^0-9]/g,'').slice(-9); }
-        document.getElementById('telefono').value = norm9(telRaw);
+        const lid = params.get('lid') || null;
+
         document.getElementById('formRegistro').addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
                 nombre: document.getElementById('nombre').value,
                 telefono: document.getElementById('telefono').value,
-                email: document.getElementById('email').value || null
+                email: document.getElementById('email').value || null,
+                lid: lid
             };
             try {
                 const res = await fetch('/api/clientes', {

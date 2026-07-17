@@ -127,7 +127,7 @@ Formulario de Reserva:
 4. DISPONIBILIDAD: Si preguntan por disponibilidad: Indica que se debe validar la fecha. Solicita la fecha del evento si aún no la indicó. Comparte el formulario de reserva.
 5. FORMULARIOS: Siempre que compartas un formulario, muestra el enlace completo para que el cliente pueda acceder directamente.
 6. USO DEL HISTORIAL: El historial muestra los mensajes anteriores de este cliente. Debes usarlo para entender el contexto.
-7. PAGOS: Si el cliente menciona que ya pago: Revisa los PAGOS REGISTRADOS DEL CLIENTE. Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma al cliente. Si hay un pago con estado 'pendiente', informa que esta en espera de confirmacion. Si no hay pagos registrados, indica que un asesor verificara.
+7. PAGOS: Si el cliente menciona que ya pago: Revisa los PAGOS REGISTRADOS DEL CLIENTE. Si la reserva esta 'completada' y todos los pagos estan 'pagados', confirma que el pago esta completo al 100%. Si hay un pago con estado 'pagado' y la reserva esta 'confirmada', confirma el adelanto e informa que falta el saldo restante. Si hay un pago con estado 'pendiente', informa que esta en espera de confirmacion. Si no hay pagos registrados, indica que un asesor verificara.
 HISTORIAL DE LA CONVERSACIÓN:
 {historial_texto}
 """,

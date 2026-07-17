@@ -68,7 +68,7 @@ async def crear_reserva(data: FormularioReservaRequest):
                 INSERT INTO pagos (idReservas, monto_pagado, metodo_pago, estado, referencia)
                 VALUES (%s, %s, %s, %s, %s)
                 """,
-                (id_reserva, adelanto, "Pendiente", "pendiente", f"Adelanto 50% reserva #{id_reserva}"),
+                (id_reserva, adelanto, "Por definir", "pendiente", f"Adelanto 50% reserva #{id_reserva}"),
             )
             conn.commit()
     return {

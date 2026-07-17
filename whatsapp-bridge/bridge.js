@@ -87,30 +87,28 @@ function normalizarTelefono(num) {
 
 function extraerTelefono(msg, contact) {
     const fuentes = [
-        { nombre: 'contact.number', valor: contact.number },
-        { nombre: 'msg.author', valor: msg.author },
         { nombre: 'msg.from', valor: msg.from },
+        { nombre: 'msg.author', valor: msg.author },
+        { nombre: 'contact.number', valor: contact.number },
     ];
 
     for (const fuente of fuentes) {
         if (!fuente.valor) continue;
+        if (fuente.valor.includes('@lid')) continue;
         const limpio = normalizarTelefono(fuente.valor);
 
         if (limpio.length >= 9 && limpio.length <= 12) {
             console.log(`[DEBUG] Fuente: ${fuente.nombre} → "${limpio}"`);
             return limpio.slice(-9);
         }
-
-        if (limpio.length >= 10) {
-            console.log(`[DEBUG] Fuente: ${fuente.nombre} (LID/largo) → "${limpio}"`);
-            return limpio;
-        }
     }
 
-    const fallback = normalizarTelefono(msg.from || '');
-    if (fallback.length >= 9) {
-        console.log(`[DEBUG] Fuente: fallback msg.from → "${fallback}"`);
-        return fallback.length > 9 ? fallback.slice(-9) : fallback;
+    if (msg.from && !msg.from.includes('@lid')) {
+        const fallback = normalizarTelefono(msg.from);
+        if (fallback.length >= 9) {
+            console.log(`[DEBUG] Fuente: fallback msg.from → "${fallback}"`);
+            return fallback.length > 9 ? fallback.slice(-9) : fallback;
+        }
     }
 
     console.log(`[DEBUG] No se pudo extraer telefono de ninguna fuente`);
@@ -131,15 +129,21 @@ function registrarHandlerMensajes(c) {
 
             const telefono = extraerTelefono(msg, contact);
 
+            let telefonoEnvio = telefono;
             if (!telefono) {
-                console.log(`Ignorado (no se pudo extraer telefono)`);
-                return;
+                const raw = msg.from || '';
+                telefonoEnvio = raw.replace('@lid', '').replace('@c.us', '').replace(/[^0-9]/g, '');
+                if (telefonoEnvio.length < 9) {
+                    console.log(`[LID] No se pudo extraer telefono ni LID valido`);
+                    return;
+                }
+                console.log(`[LID] Enviando LID como telefono: ${telefonoEnvio}`);
             }
 
-            console.log(`Mensaje de ${telefono}: ${msg.body}`);
+            console.log(`Mensaje de ${telefonoEnvio}: ${msg.body}`);
 
             const res = await axios.post(FASTAPI_URL, {
-                telefono: telefono,
+                telefono: telefonoEnvio,
                 texto: msg.body
             });
             if (res.data.respuesta) {

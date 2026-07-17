@@ -2,10 +2,12 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.cliente import ClienteCreate, ClienteResponse, MessageResponse
 from app.services.cliente_service import ClienteService
+from app.repositories.lid_map_repository import LidMapRepository
 
 
 router = APIRouter(prefix="/api", tags=["clientes"])
 service = ClienteService()
+lid_map_repo = LidMapRepository()
 
 
 @router.get("/clientes", response_model=list[ClienteResponse])
@@ -31,6 +33,8 @@ def get_cliente(cliente_id: int):
 )
 def create_cliente(cliente_data: ClienteCreate):
     service.create_cliente(cliente_data)
+    if cliente_data.lid:
+        lid_map_repo.create(cliente_data.lid, cliente_data.telefono)
     return MessageResponse(mensaje="Cliente registrado correctamente")
 
 

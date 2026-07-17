@@ -10,7 +10,7 @@ class ClienteBase(BaseModel):
 
 
 class ClienteCreate(ClienteBase):
-    pass
+    lid: str | None = None
 
 
 class ClienteResponse(ClienteBase):
